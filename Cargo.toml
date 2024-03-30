@@ -1,8 +1,28 @@
+[workspace]
+members = [
+  "crates/twamp-control",
+  "crates/control-client",
+  "crates/server",
+
+  "crates/twamp-test",
+  "crates/session-sender",
+  "crates/session-reflector",
+
+  "examples/controller",
+  "examples/responder",
+]
+
 [package]
 name = "twamp-rs"
 version = "0.1.0"
+authors = ["Shehriyar Qureshi <thatdevsherry@gmail.com>"]
 edition = "2021"
+description = "Implementation of TWAMP (RFC 5357)"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+#[[example]]
+#name = "controller"
+#path = "examples/controller/src/main.rs"
 
-[dependencies]
+#[[example]]
+#name = "responder"
+#path = "examples/responder/src/main.rs"

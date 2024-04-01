@@ -18,6 +18,9 @@ pub struct ControlClient {
 }
 
 impl ControlClient {
+    /// Construct an empty `ControlClient` with no context.
+    /// TODO: should probably init this by storing `server_addr` rather
+    /// than with no context.
     pub fn new() -> Self {
         ControlClient {
             stream: None,
@@ -26,56 +29,68 @@ impl ControlClient {
         }
     }
 
+    /// The `ControlClient` is responsible for communicating with `Server` and
+    /// should not be handled by the `Controller`. `ControlClient`'s logic for
+    /// negotiating a session should be encapsulated within itself, and the
+    /// `Controller` should only have access to `ControlClient`'s API for
+    /// initiating TWAMP session negotiation using `TWAMP-Control`.
     pub async fn connect(&mut self, server_addr: Ipv4Addr) -> Result<()> {
         let socket_addr = SocketAddrV4::new(server_addr, TWAMP_CONTROL_WELL_KNOWN_PORT);
         let stream = TcpStream::connect(socket_addr).await?;
         self.stream = Some(stream);
+        self.server_greeting = Some(self.read_server_greeting().await?);
+        //self.control_client.read_mode().await?;
+        self.send_set_up_response().await?;
+        self.server_start = Some(self.read_server_start().await?);
         Ok(())
     }
 
-    pub async fn read_server_greeting(&mut self) -> Result<()> {
+    /// Reads from TWAMP-Control stream assuming the bytes to be received
+    /// will be of a `ServerGreeting`. Converts those bytes into a `ServerGreeting`
+    /// struct and returns it.
+    pub async fn read_server_greeting(&mut self) -> Result<ServerGreeting> {
         let mut buf = [0; size_of::<ServerGreeting>()];
+        let server_greeting: ServerGreeting;
         loop {
             debug!("Reading ServerGreeting");
             let bytes_read = self.stream.as_mut().unwrap().read(&mut buf).await?;
             debug!("bytes_read: {}", bytes_read);
             if bytes_read == size_of::<ServerGreeting>() {
-                debug!("{:?}", &buf[..]);
-                self.server_greeting = Some(
-                    bincode::DefaultOptions::new()
-                        // deal with endianness when reading/writing to network
-                        .with_fixint_encoding()
-                        .with_big_endian()
-                        .deserialize(&buf[..])?,
-                );
+                server_greeting = bincode::DefaultOptions::new()
+                    // deal with endianness when reading/writing to network
+                    .with_fixint_encoding()
+                    .with_big_endian()
+                    .deserialize(&buf[..])?;
                 break;
             }
         }
-        debug!("Server greeting: {:?}", self.server_greeting);
+        debug!("Server greeting: {:?}", server_greeting);
 
-        Ok(())
+        Ok(server_greeting)
     }
 
-    pub async fn read_server_start(&mut self) -> Result<()> {
+    /// Reads from `TWAMP-Control` stream assuming the bytes to be received
+    /// will be of a `ServerStart`. Converts those bytes into a `ServerStart`
+    /// struct and returns it.
+    pub async fn read_server_start(&mut self) -> Result<ServerStart> {
         let mut buf = [0; size_of::<ServerStart>()];
+        let server_start: ServerStart;
         loop {
             debug!("Reading Server-Start");
             let bytes_read = self.stream.as_mut().unwrap().read(&mut buf).await?;
             debug!("bytes_read: {}", bytes_read);
             if bytes_read == size_of::<ServerStart>() {
                 debug!("{:?}", &buf[..]);
-                self.server_start = Some(
-                    bincode::DefaultOptions::new()
-                        // deal with endianness when reading/writing to network
-                        .with_fixint_encoding()
-                        .with_big_endian()
-                        .deserialize(&buf[..])?,
-                );
+                server_start = bincode::DefaultOptions::new()
+                    // deal with endianness when reading/writing to network
+                    .with_fixint_encoding()
+                    .with_big_endian()
+                    .deserialize(&buf[..])?;
                 break;
             }
         }
-        debug!("Server-Start: {:?}", self.server_start);
-        Ok(())
+        debug!("Server-Start: {:?}", server_start);
+        Ok(server_start)
     }
 
     pub async fn read_mode(&mut self) -> Result<()> {
@@ -87,6 +102,8 @@ impl ControlClient {
         Ok(())
     }
 
+    /// Creates a `SetUpResponse`, converts to bytes and sends it out on
+    /// `TWAMP-Control`.
     pub async fn send_set_up_response(&mut self) -> Result<()> {
         debug!("Preparing Set-Up-Response");
         let set_up_response = SetUpResponse::new(Mode::UnAuthenticated);

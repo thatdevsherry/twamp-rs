@@ -1,6 +1,6 @@
 pub mod controller;
 
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::net::Ipv4Addr;
 use std::process;
 
 use anyhow::Result;
@@ -18,7 +18,7 @@ struct Args {
 
 async fn try_main() -> Result<()> {
     let args = Args::parse();
-    let controller = Controller::new();
+    let mut controller = Controller::new();
     info!("Controller initialized");
 
     controller.connect(args.server).await?;

@@ -17,12 +17,12 @@ impl Controller {
         }
     }
 
-    pub async fn connect(mut self, server_ip: Ipv4Addr) -> Result<()> {
-        self.control_client.connect(server_ip).await?;
-        self.control_client.read_server_greeting().await?;
-        //self.control_client.read_mode().await?;
-        self.control_client.send_set_up_response().await?;
-        self.control_client.read_server_start().await?;
+    /// Informs `Control-Client` to establish TCP connection with provided
+    /// `server_addr` and negotiate a TWAMP session. The `Controller` does
+    /// not walk `Control-Client` through the TWAMP-Control communication.
+    /// That is up to `Control-Client` to handle.
+    pub async fn connect(&mut self, server_addr: Ipv4Addr) -> Result<()> {
+        self.control_client.connect(server_addr).await?;
         Ok(())
     }
 }

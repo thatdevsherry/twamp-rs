@@ -1,10 +1,11 @@
 pub mod controller;
 
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, SocketAddrV4};
 use std::process;
 
 use anyhow::Result;
 use clap::Parser;
+use tracing::*;
 
 use controller::Controller;
 
@@ -15,20 +16,21 @@ struct Args {
     server: Ipv4Addr,
 }
 
-fn try_main() -> Result<()> {
+async fn try_main() -> Result<()> {
     let args = Args::parse();
     let controller = Controller::new();
-    println!("Controller initialized");
+    info!("Controller initialized");
 
-    // init connection with server 862/tcp
-    controller.connect(args.server);
+    controller.connect(args.server).await?;
     Ok(())
 }
 
 #[tokio::main]
 async fn main() {
-    if let Err(e) = try_main() {
-        eprintln!("Error: {:#?}", e);
+    tracing_subscriber::fmt::init();
+
+    if let Err(e) = try_main().await {
+        error!("Error: {:#?}", e);
         process::exit(1)
     }
 }

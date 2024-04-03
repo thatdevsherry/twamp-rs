@@ -6,6 +6,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tracing::*;
 use twamp_control::constants::TWAMP_CONTROL_WELL_KNOWN_PORT;
+use twamp_control::request_tw_session::RequestTwSession;
 use twamp_control::security_mode::Mode;
 use twamp_control::server_greeting::ServerGreeting;
 use twamp_control::server_start::ServerStart;
@@ -42,6 +43,7 @@ impl ControlClient {
         //self.control_client.read_mode().await?;
         self.send_set_up_response().await?;
         self.server_start = Some(self.read_server_start().await?);
+        self.send_request_tw_session().await?;
         Ok(())
     }
 
@@ -116,6 +118,23 @@ impl ControlClient {
         debug!("set-up-response: {:?}", &encoded[..]);
         self.stream.as_mut().unwrap().write(&encoded[..]).await?;
         debug!("Set-Up-Response sent");
+        Ok(())
+    }
+
+    /// Creates a `Request-Tw-Session`, converts to bytes and sends it out on
+    /// `TWAMP-Control`.
+    pub async fn send_request_tw_session(&mut self) -> Result<()> {
+        debug!("Preparing Request-TW-Session");
+        let request_tw_session = RequestTwSession::from(self.stream.as_ref().unwrap());
+        let encoded = bincode::DefaultOptions::new()
+            // TODO: might wanna check simple_endian to encode endianness
+            // to the data type.
+            .with_big_endian()
+            .with_fixint_encoding()
+            .serialize(&request_tw_session)?;
+        debug!("request-tw-session: {:?}", &encoded[..]);
+        self.stream.as_mut().unwrap().write(&encoded[..]).await?;
+        debug!("Request-TW-Session sent");
         Ok(())
     }
 }

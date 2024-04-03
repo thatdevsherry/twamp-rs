@@ -20,9 +20,7 @@ impl Responder {
 
     pub async fn handle_controller(&mut self) -> Result<()> {
         debug!("in handle controller");
-        self.server.start_twamp_control().await?;
-        //self.server.send_server_greeting().await?;
-        //self.server.read_set_up_response().await?;
+        self.server.handle_control_client().await?;
         Ok(())
     }
 }

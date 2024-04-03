@@ -6,6 +6,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tracing::*;
 use twamp_control::constants::Messages;
+use twamp_control::request_tw_session::RequestTwSession;
 use twamp_control::server_start::ServerStart;
 use twamp_control::{
     security_mode::Mode, server_greeting::ServerGreeting, set_up_response::SetUpResponse,
@@ -17,12 +18,15 @@ pub struct Server {
     server_greeting: Option<ServerGreeting>,
     set_up_response: Option<SetUpResponse>,
     server_start: Option<ServerStart>,
+    request_tw_session: Option<RequestTwSession>,
 }
 
 impl Server {
     fn up_next(&self) -> Messages {
         if self.set_up_response.is_none() {
             Messages::SetUpResponse
+        } else if self.request_tw_session.is_none() {
+            Messages::RequestTwSession
         } else {
             panic!("dunno what to expect");
         }
@@ -33,10 +37,11 @@ impl Server {
             server_greeting: None,
             set_up_response: None,
             server_start: None,
+            request_tw_session: None,
         }
     }
 
-    pub async fn start_twamp_control(&mut self) -> Result<()> {
+    pub async fn handle_control_client(&mut self) -> Result<()> {
         self.server_greeting = Some(self.send_server_greeting().await?);
 
         // Testing out what is a good way to write code for
@@ -54,15 +59,18 @@ impl Server {
 
             match self.up_next() {
                 Messages::SetUpResponse => {
-                    self.read_set_up_response(&buf).await?;
-                    self.send_server_start().await?;
+                    self.set_up_response = Some(self.read_set_up_response(&buf).await?);
+                    self.server_start = Some(self.send_server_start().await?);
+                }
+                Messages::RequestTwSession => {
+                    self.request_tw_session = Some(self.read_request_tw_session(&buf).await?);
                 }
             }
         }
         Ok(())
     }
 
-    pub async fn send_server_start(&mut self) -> Result<()> {
+    pub async fn send_server_start(&mut self) -> Result<ServerStart> {
         let server_start = ServerStart::new();
         let encoded = bincode::DefaultOptions::new()
             // TODO: might wanna check simple_endian to encode endianness
@@ -72,7 +80,7 @@ impl Server {
             .serialize(&server_start)?;
         self.socket.write(&encoded[..]).await?;
         debug!("Server start sent");
-        Ok(())
+        Ok(server_start)
     }
 
     pub async fn send_server_greeting(&mut self) -> Result<ServerGreeting> {
@@ -88,16 +96,25 @@ impl Server {
         Ok(server_greeting)
     }
 
-    pub async fn read_set_up_response(&mut self, buf: &[u8]) -> Result<()> {
+    pub async fn read_set_up_response(&mut self, buf: &[u8]) -> Result<SetUpResponse> {
         let size = size_of::<SetUpResponse>();
         debug!("reading setup response");
-        self.set_up_response = Some(
-            bincode::DefaultOptions::new()
-                .with_fixint_encoding()
-                .with_big_endian()
-                .deserialize(&buf[..size])?,
-        );
+        let set_up_response: SetUpResponse = bincode::DefaultOptions::new()
+            .with_fixint_encoding()
+            .with_big_endian()
+            .deserialize(&buf[..size])?;
         debug!("received Set-Up-Response");
-        Ok(())
+        Ok(set_up_response)
+    }
+
+    pub async fn read_request_tw_session(&mut self, buf: &[u8]) -> Result<RequestTwSession> {
+        let size = size_of::<RequestTwSession>();
+        debug!("reading Request-TW-Session");
+        let request_tw_session: RequestTwSession = bincode::DefaultOptions::new()
+            .with_fixint_encoding()
+            .with_big_endian()
+            .deserialize(&buf[..size])?;
+        debug!("received Request-TW-Session: {:?}", request_tw_session);
+        Ok(request_tw_session)
     }
 }

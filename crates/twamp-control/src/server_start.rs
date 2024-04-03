@@ -13,7 +13,7 @@ enum Accept {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
-struct TimeStamp {
+pub struct TimeStamp {
     integer_part_of_seconds: [u8; 32],
     fractional_part_of_seconds: [u8; 32],
 }

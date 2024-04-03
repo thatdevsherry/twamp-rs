@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
+/// Security Mode. See details in
+/// [RFC 4656](https://datatracker.ietf.org/doc/html/rfc4656#section-3.1).
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[repr(u32)]
 pub enum Mode {
     Abort = 0u32,

@@ -117,7 +117,11 @@ impl ControlClient {
             .with_fixint_encoding()
             .serialize(&set_up_response)?;
         debug!("set-up-response: {:?}", &encoded[..]);
-        self.stream.as_mut().unwrap().write_all(&encoded[..]).await?;
+        self.stream
+            .as_mut()
+            .unwrap()
+            .write_all(&encoded[..])
+            .await?;
         debug!("Set-Up-Response sent");
         Ok(())
     }
@@ -134,7 +138,11 @@ impl ControlClient {
             .with_fixint_encoding()
             .serialize(&request_tw_session)?;
         debug!("request-tw-session: {:?}", &encoded[..]);
-        self.stream.as_mut().unwrap().write_all(&encoded[..]).await?;
+        self.stream
+            .as_mut()
+            .unwrap()
+            .write_all(&encoded[..])
+            .await?;
         debug!("Request-TW-Session sent");
         Ok(())
     }

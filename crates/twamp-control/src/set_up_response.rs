@@ -4,24 +4,38 @@ use crate::security_mode::Mode;
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+/// Sent by Control-Client to Server through TWAMP-Control after receiving
+/// [Server Greeting](crate::server_greeting::ServerGreeting).
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct SetUpResponse {
-    /// The mode that the client chooses to use during
-    /// this TWAMP-Control session. It will also be used
-    /// for all OWAMP-Test sessions started under control
-    /// of this TWAMP-Control session.
-    mode: Mode,
+    /// The [security mode](crate::security_mode::Mode) that `Control-Client` wishes to use.
+    /// It **should** be a mode that the Server supports, which it had sent in
+    /// [Server Greeting](crate::server_greeting::ServerGreeting::mode).
+    pub mode: Mode,
 
+    /// UTF-8 string up to 80 bytes, padded with zeros if shorter. Tells `Server` which shared
+    /// secret the client wishes to use to authenticate or encrypt.
+    ///
+    /// Unused in [unauthenticated mode](crate::security_mode::Mode::UnAuthenticated) and
+    /// acts as MBZ (Must Be Zero).
     #[serde(with = "BigArray")]
-    key_id: [u8; 80],
+    pub key_id: [u8; 80],
 
+    /// Concatenation of [challenge](crate::server_greeting::ServerGreeting::challenge), AES
+    /// Session-Key and HMAC-SHA1 Session-Key.
+    ///
+    /// Unused in [unauthenticated mode](crate::security_mode::Mode::UnAuthenticated) and
+    /// acts as MBZ (Must Be Zero).
     #[serde(with = "BigArray")]
-    token: [u8; 64],
+    pub token: [u8; 64],
 
-    client_iv: [u8; 16],
+    /// Unused in [unauthenticated mode](crate::security_mode::Mode::UnAuthenticated) and
+    /// acts as MBZ (Must Be Zero).
+    pub client_iv: [u8; 16],
 }
 
 impl SetUpResponse {
+    /// Create instance from supported mode, panics otherwise.
     pub fn new(mode: Mode) -> Self {
         match mode {
             Mode::UnAuthenticated => SetUpResponse {

@@ -1,25 +1,44 @@
-#![allow(dead_code)]
-
 use rand::random;
 
 use crate::security_mode::Mode;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+/// Server Greeting sent by `Server` to `Control-Client` after it opens up a TCP connection.
+/// See details in [RFC 4656](https://datatracker.ietf.org/doc/html/rfc4656#section-3.1).
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct ServerGreeting {
-    unused: [u8; 12],
+    /// Same semantics as MBZ (Must Be Zero).
+    pub unused: [u8; 12],
+
+    /// Security mode(s) that the Server supports.
     pub mode: u32,
-    challenge: [u8; 16],
-    salt: [u8; 16],
-    count: [u8; 4],
-    mbz: [u8; 12],
+
+    /// Random seq of bytes.
+    ///
+    /// Set regardless of the client's security mode capability.
+    pub challenge: [u8; 16],
+
+    /// MUST be generated pseudo-randomly.
+    ///
+    /// Set regardless of the client's security mode capability.
+    pub salt: [u8; 16],
+
+    /// TWAMP sets default MAX value SHOULD be 32768. It can be increased if computing
+    /// power can handle.
+    ///
+    /// Set regardless of the client's security mode capability.
+    pub count: [u8; 4],
+
+    /// Must Be Zero.
+    pub mbz: [u8; 12],
 }
 
 impl ServerGreeting {
-    pub fn new(mode: Mode) -> Self {
+    /// Create instance with supported modes.
+    pub fn new() -> Self {
         ServerGreeting {
             unused: [0; 12],
-            mode: (mode as u32),
+            mode: Mode::UnAuthenticated as u32,
             challenge: [random::<u8>(); 16],
             salt: [random::<u8>(); 16],
             count: *b"1024",
@@ -33,26 +52,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn should_create_server_greeting_with_mode_abort() {
-        let server_greeting = ServerGreeting::new(Mode::Abort);
-        assert_eq!(server_greeting.mode, 0);
-    }
-
-    #[test]
     fn should_create_server_greeting_with_mode_unauthenticated() {
-        let server_greeting = ServerGreeting::new(Mode::UnAuthenticated);
+        let server_greeting = ServerGreeting::new();
         assert_eq!(server_greeting.mode, 1);
-    }
-
-    #[test]
-    fn should_create_server_greeting_with_mode_authenticated() {
-        let server_greeting = ServerGreeting::new(Mode::Authenticated);
-        assert_eq!(server_greeting.mode, 2);
-    }
-
-    #[test]
-    fn should_create_server_greeting_with_mode_encrypted() {
-        let server_greeting = ServerGreeting::new(Mode::Encrypted);
-        assert_eq!(server_greeting.mode, 4);
     }
 }

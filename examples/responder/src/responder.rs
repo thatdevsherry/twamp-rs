@@ -7,6 +7,7 @@ use tracing::*;
 #[derive(Debug)]
 pub struct Responder {
     server: Server,
+    #[allow(dead_code)]
     session_reflector: Option<SessionReflector>,
 }
 

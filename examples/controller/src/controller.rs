@@ -4,8 +4,10 @@ use anyhow::Result;
 use control_client::ControlClient;
 use session_sender::SessionSender;
 
+#[derive(Debug, Default)]
 pub struct Controller {
     control_client: ControlClient,
+    #[allow(dead_code)]
     session_sender: Option<SessionSender>,
 }
 

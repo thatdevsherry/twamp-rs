@@ -1,3 +1,4 @@
+#[derive(Debug, Default)]
 pub struct SessionSender;
 
 impl SessionSender {

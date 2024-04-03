@@ -1,11 +1,11 @@
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::IpAddr;
 
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpStream;
 
 use crate::server_start::TimeStamp;
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Default)]
 pub struct RequestTwSession {
     command_number: u8,
 

@@ -78,7 +78,7 @@ impl Server {
             .with_big_endian()
             .with_fixint_encoding()
             .serialize(&server_start)?;
-        self.socket.write(&encoded[..]).await?;
+        self.socket.write_all(&encoded[..]).await?;
         debug!("Server start sent");
         Ok(server_start)
     }
@@ -91,7 +91,7 @@ impl Server {
             .with_big_endian()
             .with_fixint_encoding()
             .serialize(&server_greeting)?;
-        self.socket.write(&encoded[..]).await?;
+        self.socket.write_all(&encoded[..]).await?;
         debug!("Server greeting sent");
         Ok(server_greeting)
     }

@@ -12,18 +12,28 @@ use twamp_control::server_greeting::ServerGreeting;
 use twamp_control::server_start::ServerStart;
 use twamp_control::set_up_response::SetUpResponse;
 
+/// Control-Client is responsible for initiating and handling TWAMP-Control with a Server.
+///
+/// Responsibilites of Control-Client on TWAMP-Control are:
+/// -   [Read Server Greeting](Self::read_server_greeting)
+/// -   [Send Set-Up-Response](Self::send_set_up_response)
+/// -   [Read Server-Start](Self::read_server_start)
+/// -   [Send Request-TW-Session](Self::send_request_tw_session)
 #[derive(Debug, Default)]
 pub struct ControlClient {
-    stream: Option<TcpStream>,
-    server_greeting: Option<ServerGreeting>,
-    server_start: Option<ServerStart>,
+    /// TCP stream on which TWAMP-Control is being used.
+    pub stream: Option<TcpStream>,
+
+    /// [Server Greeting](ServerGreeting) received from Server.
+    pub server_greeting: Option<ServerGreeting>,
+
+    /// [Server-Start](ServerStart) received from Server.
+    pub server_start: Option<ServerStart>,
 }
 
 impl ControlClient {
     /// Construct an empty `ControlClient` with no context.
-    /// TODO: should probably init this by storing `server_addr` rather
-    /// than with no context.
-    pub fn new() -> Self {
+    pub fn default() -> Self {
         ControlClient {
             stream: None,
             server_greeting: None,
@@ -31,11 +41,8 @@ impl ControlClient {
         }
     }
 
-    /// The `ControlClient` is responsible for communicating with `Server` and
-    /// should not be handled by the `Controller`. `ControlClient`'s logic for
-    /// negotiating a session should be encapsulated within itself, and the
-    /// `Controller` should only have access to `ControlClient`'s API for
-    /// initiating TWAMP session negotiation using `TWAMP-Control`.
+    /// Initiates TCP connection and starts the [TWAMP-Control](twamp_control) protocol with
+    /// Server, handling communication until the test ends or connection is killed/stopped.
     pub async fn connect(&mut self, server_addr: Ipv4Addr) -> Result<()> {
         let socket_addr = SocketAddrV4::new(server_addr, TWAMP_CONTROL_WELL_KNOWN_PORT);
         let stream = TcpStream::connect(socket_addr).await?;

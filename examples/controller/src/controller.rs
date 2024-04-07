@@ -14,7 +14,7 @@ pub struct Controller {
 impl Controller {
     pub fn new() -> Self {
         Controller {
-            control_client: ControlClient::new(),
+            control_client: ControlClient::default(),
             session_sender: None,
         }
     }

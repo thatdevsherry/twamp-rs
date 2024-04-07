@@ -8,10 +8,10 @@ use tracing::*;
 use twamp_control::constants::Messages;
 use twamp_control::request_tw_session::RequestTwSession;
 use twamp_control::server_start::{Accept, ServerStart};
-use twamp_control::{
-    security_mode::Mode, server_greeting::ServerGreeting, set_up_response::SetUpResponse,
-};
+use twamp_control::{server_greeting::ServerGreeting, set_up_response::SetUpResponse};
 
+/// Server is responsible for handling incoming [TWAMP-Control](twamp_control) connection from a
+/// Control-Client.
 #[derive(Debug)]
 pub struct Server {
     socket: TcpStream,

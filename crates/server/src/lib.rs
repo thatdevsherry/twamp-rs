@@ -7,7 +7,7 @@ use tokio::net::TcpStream;
 use tracing::*;
 use twamp_control::constants::Messages;
 use twamp_control::request_tw_session::RequestTwSession;
-use twamp_control::server_start::{Accept, ServerStart};
+use twamp_control::server_start::ServerStart;
 use twamp_control::{server_greeting::ServerGreeting, set_up_response::SetUpResponse};
 
 /// Server is responsible for handling incoming [TWAMP-Control](twamp_control) connection from a
@@ -72,12 +72,12 @@ impl Server {
     }
 
     pub async fn send_server_start(&mut self) -> Result<ServerStart> {
-        let server_start = ServerStart::new(Accept::Ok);
+        let server_start = ServerStart::default();
         let encoded = bincode::DefaultOptions::new()
             // TODO: might wanna check simple_endian to encode endianness
             // to the data type.
             .with_big_endian()
-            .with_fixint_encoding()
+            //.with_fixint_encoding()
             .serialize(&server_start)?;
         self.socket.write_all(&encoded[..]).await?;
         debug!("Server start sent");
@@ -85,7 +85,7 @@ impl Server {
     }
 
     pub async fn send_server_greeting(&mut self) -> Result<ServerGreeting> {
-        let server_greeting = ServerGreeting::new();
+        let server_greeting = ServerGreeting::default();
         let encoded = bincode::DefaultOptions::new()
             // TODO: might wanna check simple_endian to encode endianness
             // to the data type.

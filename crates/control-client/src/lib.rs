@@ -19,7 +19,7 @@ use twamp_control::set_up_response::SetUpResponse;
 /// -   [Send Set-Up-Response](Self::send_set_up_response)
 /// -   [Read Server-Start](Self::read_server_start)
 /// -   [Send Request-TW-Session](Self::send_request_tw_session)
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ControlClient {
     /// TCP stream on which TWAMP-Control is being used.
     pub stream: Option<TcpStream>,
@@ -32,15 +32,6 @@ pub struct ControlClient {
 }
 
 impl ControlClient {
-    /// Construct an empty `ControlClient` with no context.
-    pub fn default() -> Self {
-        ControlClient {
-            stream: None,
-            server_greeting: None,
-            server_start: None,
-        }
-    }
-
     /// Initiates TCP connection and starts the [TWAMP-Control](twamp_control) protocol with
     /// Server, handling communication until the test ends or connection is killed/stopped.
     pub async fn connect(&mut self, server_addr: Ipv4Addr) -> Result<()> {
@@ -51,7 +42,7 @@ impl ControlClient {
         //self.control_client.read_mode().await?;
         self.send_set_up_response().await?;
         self.server_start = Some(self.read_server_start().await?);
-        self.send_request_tw_session().await?;
+        //self.send_request_tw_session().await?;
         Ok(())
     }
 
@@ -93,7 +84,7 @@ impl ControlClient {
                 debug!("{:?}", &buf[..]);
                 server_start = bincode::DefaultOptions::new()
                     // deal with endianness when reading/writing to network
-                    .with_fixint_encoding()
+                    //.with_fixint_encoding()
                     .with_big_endian()
                     .deserialize(&buf[..])?;
                 break;
@@ -105,8 +96,8 @@ impl ControlClient {
 
     pub async fn read_mode(&mut self) -> Result<()> {
         let mode = self.server_greeting.as_ref().unwrap().mode;
-        debug!("mode: {}", mode);
-        if mode == 0u32 {
+        debug!("mode: {:?}", mode);
+        if mode == Mode::Abort {
             // TODO: exit here
         }
         Ok(())
@@ -152,5 +143,16 @@ impl ControlClient {
             .await?;
         debug!("Request-TW-Session sent");
         Ok(())
+    }
+}
+
+impl Default for ControlClient {
+    /// Construct an empty `ControlClient` with no context.
+    fn default() -> Self {
+        ControlClient {
+            stream: None,
+            server_greeting: None,
+            server_start: None,
+        }
     }
 }

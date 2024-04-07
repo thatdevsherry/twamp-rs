@@ -5,13 +5,13 @@ use serde::{Deserialize, Serialize};
 
 /// Server Greeting sent by `Server` to `Control-Client` after it opens up a TCP connection.
 /// See details in [RFC 4656](https://datatracker.ietf.org/doc/html/rfc4656#section-3.1).
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ServerGreeting {
     /// Same semantics as MBZ (Must Be Zero).
     pub unused: [u8; 12],
 
     /// Security mode(s) that the Server supports.
-    pub mode: u32,
+    pub mode: Mode,
 
     /// Random seq of bytes.
     ///
@@ -35,10 +35,23 @@ pub struct ServerGreeting {
 
 impl ServerGreeting {
     /// Create instance with supported modes.
-    pub fn new() -> Self {
+    pub fn new(mode: Mode) -> Self {
         ServerGreeting {
             unused: [0; 12],
-            mode: Mode::UnAuthenticated as u32,
+            mode,
+            challenge: [random::<u8>(); 16],
+            salt: [random::<u8>(); 16],
+            count: *b"1024",
+            mbz: [0; 12],
+        }
+    }
+}
+
+impl Default for ServerGreeting {
+    fn default() -> Self {
+        ServerGreeting {
+            unused: [0; 12],
+            mode: Mode::UnAuthenticated,
             challenge: [random::<u8>(); 16],
             salt: [random::<u8>(); 16],
             count: *b"1024",
@@ -53,7 +66,7 @@ mod tests {
 
     #[test]
     fn should_create_server_greeting_with_mode_unauthenticated() {
-        let server_greeting = ServerGreeting::new();
-        assert_eq!(server_greeting.mode, 1);
+        let server_greeting = ServerGreeting::new(Mode::UnAuthenticated);
+        assert_eq!(server_greeting.mode, Mode::UnAuthenticated);
     }
 }

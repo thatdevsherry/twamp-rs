@@ -8,13 +8,21 @@ use crate::server_start::TimeStamp;
 /// Values of Command Number.
 ///
 /// Defined in [RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357/#section-8.4).
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 #[repr(u8)]
+#[serde(into = "u8")]
 pub enum CommandNumber {
-    Forbidden = 1u8,
-    StartSession = 2u8,
-    StopSession = 3u8,
-    RequestTwSession = 5u8,
-    Experimentation = 6u8,
+    Forbidden = 1,
+    StartSession = 2,
+    StopSession = 3,
+    RequestTwSession = 5,
+    Experimentation = 6,
+}
+
+impl From<CommandNumber> for u8 {
+    fn from(value: CommandNumber) -> Self {
+        value as u8
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]

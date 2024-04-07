@@ -1,27 +1,34 @@
 use serde::{Deserialize, Serialize};
 
 /// Used to communicate Server responses to Control-Client throughout TWAMP-Control protocol.
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Copy)]
 #[repr(u8)]
+#[serde(into = "u8")]
 pub enum Accept {
     /// Ok.
     #[default]
-    Ok = 0u8,
+    Ok = 0,
 
     /// Failure, reason unspecified (catch-all).
-    Failure = 1u8,
+    Failure = 1,
 
     /// Internal error.
-    InternalError = 2u8,
+    InternalError = 2,
 
     /// Some aspect of request is not supported.
-    NotSupported = 3u8,
+    NotSupported = 3,
 
     /// Cannot perform request due to permanent resource limitations.
-    PermanentResourceLimitation = 4u8,
+    PermanentResourceLimitation = 4,
 
     /// Cannot perform request due to temporary resource limitations.
-    TemporaryResourceLimitation = 5u8,
+    TemporaryResourceLimitation = 5,
+}
+
+impl From<Accept> for u8 {
+    fn from(value: Accept) -> Self {
+        value as u8
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -40,13 +47,13 @@ impl TimeStamp {
 }
 
 /// Sent by Server to Control-Client after receiving a [Set-Up-Response](crate::set_up_response::SetUpResponse) command.
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ServerStart {
     /// MBZ (Must Be Zero).
     pub mbz_start: [u8; 15],
 
     /// Indicates Server's willingness to continue. Possible values are [here](Accept).
-    pub accept: u8,
+    pub accept: Accept,
 
     /// Generated randomly. Unused in
     /// [unauthenticated mode](crate::security_mode::Mode::UnAuthenticated).
@@ -64,7 +71,19 @@ impl ServerStart {
     pub fn new(accept: Accept) -> Self {
         ServerStart {
             mbz_start: [0; 15],
-            accept: (accept) as u8,
+            accept,
+            server_iv: [0; 16],
+            start_time: TimeStamp::new(),
+            mbz_end: [0; 8],
+        }
+    }
+}
+
+impl Default for ServerStart {
+    fn default() -> Self {
+        ServerStart {
+            mbz_start: [0; 15],
+            accept: Accept::Ok,
             server_iv: [0; 16],
             start_time: TimeStamp::new(),
             mbz_end: [0; 8],

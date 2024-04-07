@@ -42,7 +42,7 @@ impl ControlClient {
         //self.control_client.read_mode().await?;
         self.send_set_up_response().await?;
         self.server_start = Some(self.read_server_start().await?);
-        //self.send_request_tw_session().await?;
+        self.send_request_tw_session().await?;
         Ok(())
     }
 

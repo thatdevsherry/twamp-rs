@@ -1,7 +1,10 @@
+use num_enum::IntoPrimitive;
 use serde::{Deserialize, Serialize};
 
+use crate::timestamp::TimeStamp;
+
 /// Used to communicate Server responses to Control-Client throughout TWAMP-Control protocol.
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Copy)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Copy, IntoPrimitive)]
 #[repr(u8)]
 #[serde(into = "u8")]
 pub enum Accept {
@@ -23,27 +26,6 @@ pub enum Accept {
 
     /// Cannot perform request due to temporary resource limitations.
     TemporaryResourceLimitation = 5,
-}
-
-impl From<Accept> for u8 {
-    fn from(value: Accept) -> Self {
-        value as u8
-    }
-}
-
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct TimeStamp {
-    pub integer_part_of_seconds: [u8; 32],
-    pub fractional_part_of_seconds: [u8; 32],
-}
-
-impl TimeStamp {
-    pub fn new() -> Self {
-        TimeStamp {
-            integer_part_of_seconds: [0; 32],
-            fractional_part_of_seconds: [0; 32],
-        }
-    }
 }
 
 /// Sent by Server to Control-Client after receiving a [Set-Up-Response](crate::set_up_response::SetUpResponse) command.
@@ -88,5 +70,46 @@ impl Default for ServerStart {
             start_time: TimeStamp::new(),
             mbz_end: [0; 8],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::mem::size_of;
+
+    use bincode::Options;
+
+    use super::ServerStart;
+
+    #[test]
+    fn should_have_correct_bytes_of_struct() {
+        assert_eq!(size_of::<ServerStart>(), 48);
+    }
+
+    #[test]
+    fn should_serialize_to_correct_bytes() {
+        let server_start = ServerStart::default();
+        let encoded = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .with_fixint_encoding()
+            .serialize(&server_start)
+            .unwrap();
+        assert_eq!(encoded.len(), size_of::<ServerStart>());
+    }
+
+    #[test]
+    fn should_deserialize_to_correct_struct() {
+        let server_start = ServerStart::default();
+        let encoded = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .with_fixint_encoding()
+            .serialize(&server_start)
+            .unwrap();
+        let decoded: ServerStart = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .allow_trailing_bytes()
+            .deserialize(&encoded)
+            .unwrap();
+        assert_eq!(decoded, server_start);
     }
 }

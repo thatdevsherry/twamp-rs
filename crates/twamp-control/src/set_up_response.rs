@@ -49,3 +49,44 @@ impl SetUpResponse {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::mem::size_of;
+
+    use bincode::Options;
+
+    use crate::{security_mode::Mode, set_up_response::SetUpResponse};
+
+    #[test]
+    fn should_have_correct_size() {
+        assert_eq!(size_of::<SetUpResponse>(), 164)
+    }
+
+    #[test]
+    fn should_serialize_correctly() {
+        let set_up_response = SetUpResponse::new(Mode::UnAuthenticated);
+        let encoded = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .with_fixint_encoding()
+            .serialize(&set_up_response)
+            .unwrap();
+        assert_eq!(encoded.len(), 164)
+    }
+
+    #[test]
+    fn should_deserialize_to_struct() {
+        let set_up_response = SetUpResponse::new(Mode::UnAuthenticated);
+        let encoded = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .with_fixint_encoding()
+            .serialize(&set_up_response)
+            .unwrap();
+        let decoded: SetUpResponse = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .with_fixint_encoding()
+            .deserialize(&encoded)
+            .unwrap();
+        assert_eq!(decoded, set_up_response)
+    }
+}

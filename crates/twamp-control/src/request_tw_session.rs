@@ -3,27 +3,7 @@ use std::net::IpAddr;
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpStream;
 
-use crate::server_start::TimeStamp;
-
-/// Values of Command Number.
-///
-/// Defined in [RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357/#section-8.4).
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-#[repr(u8)]
-#[serde(into = "u8")]
-pub enum CommandNumber {
-    Forbidden = 1,
-    StartSession = 2,
-    StopSession = 3,
-    RequestTwSession = 5,
-    Experimentation = 6,
-}
-
-impl From<CommandNumber> for u8 {
-    fn from(value: CommandNumber) -> Self {
-        value as u8
-    }
-}
+use crate::{command_number::CommandNumber, timestamp::TimeStamp};
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct RequestTwSession {
@@ -70,13 +50,13 @@ pub struct RequestTwSession {
     pub sender_address: u32,
 
     /// Utilised if [IPVN](Self::ipvn) is `6` otherwise is MBZ (Must Be Zero).
-    pub sender_address_cont: u128,
+    pub sender_address_cont: [u8; 12],
 
     /// IP address of receiver. Can be set to 0 in which case the IP of Server will be used.
     pub receiver_address: u32,
 
     /// Utilised if [IPVN](Self::ipvn) is `6` otherwise is MBZ (Must Be Zero).
-    pub receiver_address_cont: u128,
+    pub receiver_address_cont: [u8; 12],
 
     /// Session Identifier. Must be 0 since it's generated on receiving side.
     pub sid: [u8; 16],
@@ -151,9 +131,9 @@ impl RequestTwSession {
             sender_port: 0,
             receiver_port: 0,
             sender_address: 0,
-            sender_address_cont: 0,
+            sender_address_cont: [0; 12],
             receiver_address: 0,
-            receiver_address_cont: 0,
+            receiver_address_cont: [0; 12],
             // Must be zero.
             sid: [0; 16],
             padding_length: 0,
@@ -163,5 +143,47 @@ impl RequestTwSession {
             mbz: [0; 8],
             hmac: [0; 16],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::mem::size_of;
+
+    use bincode::Options;
+
+    use crate::request_tw_session::RequestTwSession;
+
+    #[test]
+    fn should_have_correct_size() {
+        assert_eq!(size_of::<RequestTwSession>(), 112)
+    }
+
+    #[test]
+    fn should_serialize_correctly() {
+        let request_tw_session = RequestTwSession::default();
+        let encoded = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .with_fixint_encoding()
+            .serialize(&request_tw_session)
+            .unwrap();
+        assert_eq!(encoded.len(), 112)
+    }
+
+    #[test]
+    fn should_deserialize_to_struct() {
+        let request_tw_session = RequestTwSession::default();
+        let encoded = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .with_fixint_encoding()
+            .serialize(&request_tw_session)
+            .unwrap();
+        println!("{}", encoded.len());
+        let decoded: RequestTwSession = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .with_fixint_encoding()
+            .deserialize(&encoded)
+            .unwrap();
+        assert_eq!(decoded, request_tw_session)
     }
 }

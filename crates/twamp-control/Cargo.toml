@@ -13,3 +13,4 @@ rand = "0.8.5"
 serde = { version = "1.0.197", features = ["derive"] }
 tracing = "0.1.40"
 serde-big-array = "0.5.1"
+num_enum = "0.7.2"

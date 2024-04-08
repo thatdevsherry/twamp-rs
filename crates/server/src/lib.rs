@@ -5,9 +5,10 @@ use bincode::Options;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tracing::*;
+use twamp_control::accept_session::AcceptSession;
 use twamp_control::constants::Messages;
 use twamp_control::request_tw_session::RequestTwSession;
-use twamp_control::server_start::ServerStart;
+use twamp_control::server_start::{Accept, ServerStart};
 use twamp_control::{server_greeting::ServerGreeting, set_up_response::SetUpResponse};
 
 /// Server is responsible for handling incoming [TWAMP-Control](twamp_control) connection from a
@@ -64,6 +65,7 @@ impl Server {
                 }
                 Messages::RequestTwSession => {
                     self.request_tw_session = Some(self.read_request_tw_session(&buf).await?);
+                    self.send_accept_session().await?;
                 }
             }
         }
@@ -71,13 +73,24 @@ impl Server {
         Ok(())
     }
 
+    pub async fn send_accept_session(&mut self) -> Result<AcceptSession> {
+        let accept_session = AcceptSession::new(Accept::Failure, 0);
+        let encoded = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .with_fixint_encoding()
+            .serialize(&accept_session)?;
+        debug!("accept-session len: {}", encoded.len());
+        debug!("accept-session: {:?}", &encoded[..]);
+        self.socket.write_all(&encoded[..]).await?;
+        debug!("Accept-Session sent");
+        Ok(accept_session)
+    }
+
     pub async fn send_server_start(&mut self) -> Result<ServerStart> {
         let server_start = ServerStart::default();
         let encoded = bincode::DefaultOptions::new()
-            // TODO: might wanna check simple_endian to encode endianness
-            // to the data type.
             .with_big_endian()
-            //.with_fixint_encoding()
+            .with_fixint_encoding()
             .serialize(&server_start)?;
         self.socket.write_all(&encoded[..]).await?;
         debug!("Server start sent");
@@ -86,12 +99,7 @@ impl Server {
 
     pub async fn send_server_greeting(&mut self) -> Result<ServerGreeting> {
         let server_greeting = ServerGreeting::default();
-        let encoded = bincode::DefaultOptions::new()
-            // TODO: might wanna check simple_endian to encode endianness
-            // to the data type.
-            .with_big_endian()
-            .with_fixint_encoding()
-            .serialize(&server_greeting)?;
+        let encoded: Vec<u8> = server_greeting.clone().try_into().unwrap();
         self.socket.write_all(&encoded[..]).await?;
         debug!("Server greeting sent");
         Ok(server_greeting)
@@ -101,8 +109,8 @@ impl Server {
         let size = size_of::<SetUpResponse>();
         debug!("reading setup response");
         let set_up_response: SetUpResponse = bincode::DefaultOptions::new()
-            .with_fixint_encoding()
             .with_big_endian()
+            .with_fixint_encoding()
             .deserialize(&buf[..size])?;
         debug!("received Set-Up-Response");
         Ok(set_up_response)
@@ -112,8 +120,8 @@ impl Server {
         let size = size_of::<RequestTwSession>();
         debug!("reading Request-TW-Session");
         let request_tw_session: RequestTwSession = bincode::DefaultOptions::new()
-            .with_fixint_encoding()
             .with_big_endian()
+            .with_fixint_encoding()
             .deserialize(&buf[..size])?;
         debug!("received Request-TW-Session: {:?}", request_tw_session);
         Ok(request_tw_session)

@@ -5,6 +5,7 @@ use std::net::{Ipv4Addr, SocketAddrV4};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tracing::*;
+use twamp_control::accept_session::AcceptSession;
 use twamp_control::constants::TWAMP_CONTROL_WELL_KNOWN_PORT;
 use twamp_control::request_tw_session::RequestTwSession;
 use twamp_control::security_mode::Mode;
@@ -43,7 +44,25 @@ impl ControlClient {
         self.send_set_up_response().await?;
         self.server_start = Some(self.read_server_start().await?);
         self.send_request_tw_session().await?;
+        self.read_accept_session().await?;
         Ok(())
+    }
+
+    pub async fn read_accept_session(&mut self) -> Result<AcceptSession> {
+        let mut buf = [0; size_of::<AcceptSession>()];
+        debug!("buf for accept-session: {}", buf.len());
+        debug!("Reading Accept-Session");
+        let bytes_read = self.stream.as_mut().unwrap().read(&mut buf).await?;
+        debug!("bytes_read: {}", bytes_read);
+        debug!("bytes: {:?}", buf);
+        debug!("deserializing");
+        let accept_session: AcceptSession = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .allow_trailing_bytes()
+            .deserialize(&buf[..])?;
+        debug!("Accept-Session: {:?}", accept_session);
+
+        Ok(accept_session)
     }
 
     /// Reads from TWAMP-Control stream assuming the bytes to be received
@@ -52,19 +71,10 @@ impl ControlClient {
     pub async fn read_server_greeting(&mut self) -> Result<ServerGreeting> {
         let mut buf = [0; size_of::<ServerGreeting>()];
         let server_greeting: ServerGreeting;
-        loop {
-            debug!("Reading ServerGreeting");
-            let bytes_read = self.stream.as_mut().unwrap().read(&mut buf).await?;
-            debug!("bytes_read: {}", bytes_read);
-            if bytes_read == size_of::<ServerGreeting>() {
-                server_greeting = bincode::DefaultOptions::new()
-                    // deal with endianness when reading/writing to network
-                    .with_fixint_encoding()
-                    .with_big_endian()
-                    .deserialize(&buf[..])?;
-                break;
-            }
-        }
+        debug!("Reading ServerGreeting");
+        let bytes_read = self.stream.as_mut().unwrap().read(&mut buf).await?;
+        debug!("bytes_read: {}", bytes_read);
+        server_greeting = buf.try_into().unwrap();
         debug!("Server greeting: {:?}", server_greeting);
 
         Ok(server_greeting)
@@ -76,20 +86,14 @@ impl ControlClient {
     pub async fn read_server_start(&mut self) -> Result<ServerStart> {
         let mut buf = [0; size_of::<ServerStart>()];
         let server_start: ServerStart;
-        loop {
-            debug!("Reading Server-Start");
-            let bytes_read = self.stream.as_mut().unwrap().read(&mut buf).await?;
-            debug!("bytes_read: {}", bytes_read);
-            if bytes_read == size_of::<ServerStart>() {
-                debug!("{:?}", &buf[..]);
-                server_start = bincode::DefaultOptions::new()
-                    // deal with endianness when reading/writing to network
-                    //.with_fixint_encoding()
-                    .with_big_endian()
-                    .deserialize(&buf[..])?;
-                break;
-            }
-        }
+        debug!("Reading Server-Start");
+        let bytes_read = self.stream.as_mut().unwrap().read(&mut buf).await?;
+        debug!("bytes_read: {}", bytes_read);
+        debug!("{:?}", &buf[..]);
+        server_start = bincode::DefaultOptions::new()
+            .with_big_endian()
+            .allow_trailing_bytes()
+            .deserialize(&buf[..])?;
         debug!("Server-Start: {:?}", server_start);
         Ok(server_start)
     }
@@ -109,8 +113,6 @@ impl ControlClient {
         debug!("Preparing Set-Up-Response");
         let set_up_response = SetUpResponse::new(Mode::UnAuthenticated);
         let encoded = bincode::DefaultOptions::new()
-            // TODO: might wanna check simple_endian to encode endianness
-            // to the data type.
             .with_big_endian()
             .with_fixint_encoding()
             .serialize(&set_up_response)?;
@@ -130,8 +132,6 @@ impl ControlClient {
         debug!("Preparing Request-TW-Session");
         let request_tw_session = RequestTwSession::from(self.stream.as_ref().unwrap());
         let encoded = bincode::DefaultOptions::new()
-            // TODO: might wanna check simple_endian to encode endianness
-            // to the data type.
             .with_big_endian()
             .with_fixint_encoding()
             .serialize(&request_tw_session)?;

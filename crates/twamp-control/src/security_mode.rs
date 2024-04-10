@@ -1,11 +1,11 @@
+use deku::prelude::*;
 use num_enum::IntoPrimitive;
-use serde::{Deserialize, Serialize};
 
 /// Security Mode. See details in
 /// [RFC 4656](https://datatracker.ietf.org/doc/html/rfc4656#section-3.1).
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Copy, IntoPrimitive)]
-#[serde(into = "u32")]
+#[derive(Clone, Debug, Default, PartialEq, Copy, IntoPrimitive, DekuRead, DekuWrite)]
 #[repr(u32)]
+#[deku(type = "u32", endian = "endian", ctx = "endian: deku::ctx::Endian")]
 pub enum Mode {
     Abort = 0,
     #[default]

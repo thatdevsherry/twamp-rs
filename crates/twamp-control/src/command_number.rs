@@ -1,12 +1,12 @@
+use deku::prelude::*;
 use num_enum::IntoPrimitive;
-use serde::{Deserialize, Serialize};
 
 /// Values of Command Number.
 ///
 /// Defined in [RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357/#section-8.4).
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, IntoPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, IntoPrimitive, DekuRead, DekuWrite)]
 #[repr(u8)]
-#[serde(into = "u8")]
+#[deku(type = "u8")]
 pub enum CommandNumber {
     Forbidden = 1,
     StartSession = 2,

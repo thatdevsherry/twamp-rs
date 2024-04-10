@@ -10,4 +10,4 @@ twamp-control = { path = "../twamp-control" }
 tokio = { version = "1", features = ["full"] }
 anyhow = "1.0.81"
 tracing = "0.1.40"
-bincode = "1.3.3"
+deku = { workspace = true }

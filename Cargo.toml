@@ -19,6 +19,9 @@ authors = ["Shehriyar Qureshi <thatdevsherry@gmail.com>"]
 edition = "2021"
 description = "Implementation of TWAMP (RFC 5357)"
 
+[workspace.dependencies]
+deku = "0.16.0"
+
 #[[example]]
 #name = "controller"
 #path = "examples/controller/src/main.rs"

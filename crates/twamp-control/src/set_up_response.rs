@@ -1,12 +1,12 @@
 #![allow(dead_code)]
 
 use crate::security_mode::Mode;
-use serde::{Deserialize, Serialize};
-use serde_big_array::BigArray;
+use deku::prelude::*;
 
 /// Sent by Control-Client to Server through TWAMP-Control after receiving
 /// [Server Greeting](crate::server_greeting::ServerGreeting).
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
+#[deku(endian = "big")]
 pub struct SetUpResponse {
     /// The [security mode](crate::security_mode::Mode) that `Control-Client` wishes to use.
     /// It **should** be a mode that the Server supports, which it had sent in
@@ -18,7 +18,6 @@ pub struct SetUpResponse {
     ///
     /// Unused in [unauthenticated mode](crate::security_mode::Mode::UnAuthenticated) and
     /// acts as MBZ (Must Be Zero).
-    #[serde(with = "BigArray")]
     pub key_id: [u8; 80],
 
     /// Concatenation of [challenge](crate::server_greeting::ServerGreeting::challenge), AES
@@ -26,7 +25,6 @@ pub struct SetUpResponse {
     ///
     /// Unused in [unauthenticated mode](crate::security_mode::Mode::UnAuthenticated) and
     /// acts as MBZ (Must Be Zero).
-    #[serde(with = "BigArray")]
     pub token: [u8; 64],
 
     /// Unused in [unauthenticated mode](crate::security_mode::Mode::UnAuthenticated) and
@@ -52,11 +50,8 @@ impl SetUpResponse {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::mem::size_of;
-
-    use bincode::Options;
-
-    use crate::{security_mode::Mode, set_up_response::SetUpResponse};
 
     #[test]
     fn should_have_correct_size() {
@@ -66,27 +61,15 @@ mod tests {
     #[test]
     fn should_serialize_correctly() {
         let set_up_response = SetUpResponse::new(Mode::UnAuthenticated);
-        let encoded = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .serialize(&set_up_response)
-            .unwrap();
+        let encoded = set_up_response.to_bytes().unwrap();
         assert_eq!(encoded.len(), 164)
     }
 
     #[test]
     fn should_deserialize_to_struct() {
         let set_up_response = SetUpResponse::new(Mode::UnAuthenticated);
-        let encoded = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .serialize(&set_up_response)
-            .unwrap();
-        let decoded: SetUpResponse = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .deserialize(&encoded)
-            .unwrap();
-        assert_eq!(decoded, set_up_response)
+        let encoded = set_up_response.to_bytes().unwrap();
+        let (_rest, val) = SetUpResponse::from_bytes((&encoded, 0)).unwrap();
+        assert_eq!(val, set_up_response)
     }
 }

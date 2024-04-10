@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
-
 use crate::server_start::Accept;
+use deku::prelude::*;
 
 /// Response for a Request-TW-Session command.
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
+#[deku(endian = "big")]
 pub struct AcceptSession {
     /// Represents Server's willingness to continue or reject.
     pub accept: Accept,
@@ -52,11 +52,8 @@ impl Default for AcceptSession {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::size_of;
-
-    use bincode::Options;
-
     use super::*;
+    use std::mem::size_of;
 
     #[test]
     fn should_have_correct_size_of_struct() {
@@ -66,27 +63,15 @@ mod tests {
     #[test]
     fn should_serialize_into_correct_length_of_bytes() {
         let accept_session = AcceptSession::default();
-        let encoded = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .serialize(&accept_session)
-            .unwrap();
+        let encoded = accept_session.to_bytes().unwrap();
         assert_eq!(encoded.len(), size_of::<AcceptSession>());
     }
 
     #[test]
     fn should_deserialize_into_correct_length_of_bytes() {
         let accept_session = AcceptSession::default();
-        let encoded = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .serialize(&accept_session)
-            .unwrap();
-        let decoded: AcceptSession = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .allow_trailing_bytes()
-            .deserialize(&encoded)
-            .unwrap();
-        assert_eq!(decoded, accept_session);
+        let encoded = accept_session.to_bytes().unwrap();
+        let (_rest, val) = AcceptSession::from_bytes((&encoded, 0)).unwrap();
+        assert_eq!(val, accept_session);
     }
 }

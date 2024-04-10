@@ -1,5 +1,5 @@
 use anyhow::Result;
-use bincode::Options;
+use deku::prelude::*;
 use std::mem::size_of;
 use std::net::{Ipv4Addr, SocketAddrV4};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -50,17 +50,11 @@ impl ControlClient {
 
     pub async fn read_accept_session(&mut self) -> Result<AcceptSession> {
         let mut buf = [0; size_of::<AcceptSession>()];
-        debug!("buf for accept-session: {}", buf.len());
-        debug!("Reading Accept-Session");
-        let bytes_read = self.stream.as_mut().unwrap().read(&mut buf).await?;
-        debug!("bytes_read: {}", bytes_read);
-        debug!("bytes: {:?}", buf);
-        debug!("deserializing");
-        let accept_session: AcceptSession = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .allow_trailing_bytes()
-            .deserialize(&buf[..])?;
+        info!("Reading Accept-Session");
+        self.stream.as_mut().unwrap().read(&mut buf).await?;
+        let (_rest, accept_session) = AcceptSession::from_bytes((&buf, 0)).unwrap();
         debug!("Accept-Session: {:?}", accept_session);
+        info!("Read Accept-Session");
 
         Ok(accept_session)
     }
@@ -70,13 +64,11 @@ impl ControlClient {
     /// struct and returns it.
     pub async fn read_server_greeting(&mut self) -> Result<ServerGreeting> {
         let mut buf = [0; size_of::<ServerGreeting>()];
-        let server_greeting: ServerGreeting;
-        debug!("Reading ServerGreeting");
-        let bytes_read = self.stream.as_mut().unwrap().read(&mut buf).await?;
-        debug!("bytes_read: {}", bytes_read);
-        server_greeting = buf.try_into().unwrap();
+        info!("Reading ServerGreeting");
+        self.stream.as_mut().unwrap().read(&mut buf).await?;
+        let (_rest, server_greeting) = ServerGreeting::from_bytes((&buf, 0)).unwrap();
         debug!("Server greeting: {:?}", server_greeting);
-
+        info!("Read ServerGreeting");
         Ok(server_greeting)
     }
 
@@ -85,16 +77,11 @@ impl ControlClient {
     /// struct and returns it.
     pub async fn read_server_start(&mut self) -> Result<ServerStart> {
         let mut buf = [0; size_of::<ServerStart>()];
-        let server_start: ServerStart;
-        debug!("Reading Server-Start");
-        let bytes_read = self.stream.as_mut().unwrap().read(&mut buf).await?;
-        debug!("bytes_read: {}", bytes_read);
-        debug!("{:?}", &buf[..]);
-        server_start = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .allow_trailing_bytes()
-            .deserialize(&buf[..])?;
+        info!("Reading Server-Start");
+        self.stream.as_mut().unwrap().read(&mut buf).await?;
+        let (_rest, server_start) = ServerStart::from_bytes((&buf, 0)).unwrap();
         debug!("Server-Start: {:?}", server_start);
+        info!("Read Server-Start");
         Ok(server_start)
     }
 
@@ -110,38 +97,32 @@ impl ControlClient {
     /// Creates a `SetUpResponse`, converts to bytes and sends it out on
     /// `TWAMP-Control`.
     pub async fn send_set_up_response(&mut self) -> Result<()> {
-        debug!("Preparing Set-Up-Response");
+        info!("Preparing Set-Up-Response");
         let set_up_response = SetUpResponse::new(Mode::UnAuthenticated);
-        let encoded = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .serialize(&set_up_response)?;
-        debug!("set-up-response: {:?}", &encoded[..]);
+        debug!("Set-Up-Response: {:?}", set_up_response);
+        let encoded = set_up_response.to_bytes().unwrap();
         self.stream
             .as_mut()
             .unwrap()
             .write_all(&encoded[..])
             .await?;
-        debug!("Set-Up-Response sent");
+        info!("Set-Up-Response sent");
         Ok(())
     }
 
     /// Creates a `Request-Tw-Session`, converts to bytes and sends it out on
     /// `TWAMP-Control`.
     pub async fn send_request_tw_session(&mut self) -> Result<()> {
-        debug!("Preparing Request-TW-Session");
+        info!("Preparing Request-TW-Session");
         let request_tw_session = RequestTwSession::from(self.stream.as_ref().unwrap());
-        let encoded = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .serialize(&request_tw_session)?;
-        debug!("request-tw-session: {:?}", &encoded[..]);
+        debug!("request-tw-session: {:?}", request_tw_session);
+        let encoded = request_tw_session.to_bytes().unwrap();
         self.stream
             .as_mut()
             .unwrap()
             .write_all(&encoded[..])
             .await?;
-        debug!("Request-TW-Session sent");
+        info!("Request-TW-Session sent");
         Ok(())
     }
 }

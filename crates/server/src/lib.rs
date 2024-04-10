@@ -1,7 +1,5 @@
-use std::mem::size_of;
-
 use anyhow::Result;
-use bincode::Options;
+use deku::prelude::*;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tracing::*;
@@ -74,56 +72,48 @@ impl Server {
     }
 
     pub async fn send_accept_session(&mut self) -> Result<AcceptSession> {
-        let accept_session = AcceptSession::new(Accept::Failure, 0);
-        let encoded = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .serialize(&accept_session)?;
-        debug!("accept-session len: {}", encoded.len());
-        debug!("accept-session: {:?}", &encoded[..]);
+        info!("Sending Accept-Session");
+        let accept_session = AcceptSession::new(Accept::Ok, 0);
+        debug!("Accept-Session: {:?}", accept_session);
+        let encoded = accept_session.to_bytes().unwrap();
         self.socket.write_all(&encoded[..]).await?;
-        debug!("Accept-Session sent");
+        debug!("Sent Accept-Session");
         Ok(accept_session)
     }
 
     pub async fn send_server_start(&mut self) -> Result<ServerStart> {
+        info!("Sending Server-Start");
         let server_start = ServerStart::default();
-        let encoded = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .serialize(&server_start)?;
+        debug!("Server-Start: {:?}", server_start);
+        let encoded = server_start.to_bytes().unwrap();
         self.socket.write_all(&encoded[..]).await?;
-        debug!("Server start sent");
+        info!("Sent Server-Start");
         Ok(server_start)
     }
 
     pub async fn send_server_greeting(&mut self) -> Result<ServerGreeting> {
+        info!("Sending ServerGreeting");
         let server_greeting = ServerGreeting::default();
-        let encoded: Vec<u8> = server_greeting.clone().try_into().unwrap();
+        debug!("ServerGreeting: {:?}", server_greeting);
+        let encoded = server_greeting.to_bytes().unwrap();
         self.socket.write_all(&encoded[..]).await?;
-        debug!("Server greeting sent");
+        info!("Sent ServerGreeting");
         Ok(server_greeting)
     }
 
     pub async fn read_set_up_response(&mut self, buf: &[u8]) -> Result<SetUpResponse> {
-        let size = size_of::<SetUpResponse>();
-        debug!("reading setup response");
-        let set_up_response: SetUpResponse = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .deserialize(&buf[..size])?;
-        debug!("received Set-Up-Response");
+        info!("Reading Set-Up-Response");
+        let (_rest, set_up_response) = SetUpResponse::from_bytes((&buf, 0)).unwrap();
+        debug!("Set-Up-Response: {:?}", set_up_response);
+        info!("Read Set-Up-Response");
         Ok(set_up_response)
     }
 
     pub async fn read_request_tw_session(&mut self, buf: &[u8]) -> Result<RequestTwSession> {
-        let size = size_of::<RequestTwSession>();
-        debug!("reading Request-TW-Session");
-        let request_tw_session: RequestTwSession = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .deserialize(&buf[..size])?;
-        debug!("received Request-TW-Session: {:?}", request_tw_session);
+        debug!("Reading Request-TW-Session");
+        let (_rest, request_tw_session) = RequestTwSession::from_bytes((&buf, 0)).unwrap();
+        debug!("Request-TW-Session: {:?}", request_tw_session);
+        info!("Read Request-TW-Session");
         Ok(request_tw_session)
     }
 }

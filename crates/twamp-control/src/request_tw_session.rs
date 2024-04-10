@@ -1,11 +1,10 @@
+use crate::{command_number::CommandNumber, timestamp::TimeStamp};
+use deku::prelude::*;
 use std::net::IpAddr;
-
-use serde::{Deserialize, Serialize};
 use tokio::net::TcpStream;
 
-use crate::{command_number::CommandNumber, timestamp::TimeStamp};
-
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, DekuRead, DekuWrite)]
+#[deku(endian = "big")]
 pub struct RequestTwSession {
     /// Command number field. The value of Request-TW-Session is `5`.
     pub command_number: u8,
@@ -148,11 +147,8 @@ impl RequestTwSession {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::mem::size_of;
-
-    use bincode::Options;
-
-    use crate::request_tw_session::RequestTwSession;
 
     #[test]
     fn should_have_correct_size() {
@@ -162,28 +158,15 @@ mod tests {
     #[test]
     fn should_serialize_correctly() {
         let request_tw_session = RequestTwSession::default();
-        let encoded = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .serialize(&request_tw_session)
-            .unwrap();
+        let encoded = request_tw_session.to_bytes().unwrap();
         assert_eq!(encoded.len(), 112)
     }
 
     #[test]
     fn should_deserialize_to_struct() {
         let request_tw_session = RequestTwSession::default();
-        let encoded = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .serialize(&request_tw_session)
-            .unwrap();
-        println!("{}", encoded.len());
-        let decoded: RequestTwSession = bincode::DefaultOptions::new()
-            .with_big_endian()
-            .with_fixint_encoding()
-            .deserialize(&encoded)
-            .unwrap();
-        assert_eq!(decoded, request_tw_session)
+        let encoded = request_tw_session.to_bytes().unwrap();
+        let (_rest, val) = RequestTwSession::from_bytes((&encoded, 0)).unwrap();
+        assert_eq!(val, request_tw_session)
     }
 }

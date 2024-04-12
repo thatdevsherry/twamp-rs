@@ -38,7 +38,7 @@ pub struct ServerStart {
     pub accept: Accept,
 
     /// Generated randomly. Unused in
-    /// [unauthenticated mode](crate::security_mode::Mode::UnAuthenticated).
+    /// [unauthenticated mode](crate::security_mode::Mode::Unauthenticated).
     pub server_iv: [u8; 16],
 
     /// The time when the Server binary was executed.

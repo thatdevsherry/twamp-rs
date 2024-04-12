@@ -6,6 +6,7 @@ use tracing::*;
 use twamp_control::accept_session::AcceptSession;
 use twamp_control::constants::Messages;
 use twamp_control::request_tw_session::RequestTwSession;
+use twamp_control::security_mode::Mode;
 use twamp_control::server_start::{Accept, ServerStart};
 use twamp_control::{server_greeting::ServerGreeting, set_up_response::SetUpResponse};
 
@@ -18,6 +19,7 @@ pub struct Server {
     set_up_response: Option<SetUpResponse>,
     server_start: Option<ServerStart>,
     request_tw_session: Option<RequestTwSession>,
+    accept_session: Option<AcceptSession>,
 }
 
 impl Server {
@@ -37,6 +39,7 @@ impl Server {
             set_up_response: None,
             server_start: None,
             request_tw_session: None,
+            accept_session: None,
         }
     }
 
@@ -63,7 +66,7 @@ impl Server {
                 }
                 Messages::RequestTwSession => {
                     self.request_tw_session = Some(self.read_request_tw_session(&buf).await?);
-                    self.send_accept_session().await?;
+                    self.accept_session = Some(self.send_accept_session().await?);
                 }
             }
         }
@@ -93,7 +96,7 @@ impl Server {
 
     pub async fn send_server_greeting(&mut self) -> Result<ServerGreeting> {
         info!("Sending ServerGreeting");
-        let server_greeting = ServerGreeting::default();
+        let server_greeting = ServerGreeting::new(&[Mode::Unauthenticated]);
         debug!("ServerGreeting: {:?}", server_greeting);
         let encoded = server_greeting.to_bytes().unwrap();
         self.socket.write_all(&encoded[..]).await?;

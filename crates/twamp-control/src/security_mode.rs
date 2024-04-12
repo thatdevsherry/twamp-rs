@@ -7,11 +7,24 @@ use num_enum::IntoPrimitive;
 #[repr(u32)]
 #[deku(type = "u32", endian = "endian", ctx = "endian: deku::ctx::Endian")]
 pub enum Mode {
-    Abort = 0,
+    /// Unused.
+    /// Control-Client **should** close the connection.
+    /// Server **may** close the connection immediately.
+    Reserved = 0,
+
+    /// Unauthenticated TWAMP-Control and TWAMP-Test.
     #[default]
-    UnAuthenticated = 1,
+    Unauthenticated = 1,
+
+    /// Authenticated TWAMP-Control and TWAMP-Test.
     Authenticated = 2,
+
+    /// Encrypted TWAMP-Control and TWAMP-Test.
     Encrypted = 4,
+
+    /// [Mixed security mode](https://datatracker.ietf.org/doc/html/rfc5618).
+    /// Encrypted TWAMP-Control but unauthenticated TWAMP-Test.
+    EncryptedControlUnauthTest = 8,
 }
 
 #[cfg(test)]
@@ -20,8 +33,8 @@ mod tests {
 
     #[test]
     fn should_have_valid_discriminants() {
-        let reserved: u32 = Mode::Abort.into();
-        let unauthenticated: u32 = Mode::UnAuthenticated.into();
+        let reserved: u32 = Mode::Reserved.into();
+        let unauthenticated: u32 = Mode::Unauthenticated.into();
         let authenticated: u32 = Mode::Authenticated.into();
         let encrypted: u32 = Mode::Encrypted.into();
         assert_eq!(reserved, 0u32);

@@ -85,20 +85,11 @@ impl ControlClient {
         Ok(server_start)
     }
 
-    pub async fn read_mode(&mut self) -> Result<()> {
-        let mode = self.server_greeting.as_ref().unwrap().mode;
-        debug!("mode: {:?}", mode);
-        if mode == Mode::Abort {
-            // TODO: exit here
-        }
-        Ok(())
-    }
-
     /// Creates a `SetUpResponse`, converts to bytes and sends it out on
     /// `TWAMP-Control`.
     pub async fn send_set_up_response(&mut self) -> Result<()> {
         info!("Preparing Set-Up-Response");
-        let set_up_response = SetUpResponse::new(Mode::UnAuthenticated);
+        let set_up_response = SetUpResponse::new(Mode::Unauthenticated);
         debug!("Set-Up-Response: {:?}", set_up_response);
         let encoded = set_up_response.to_bytes().unwrap();
         self.stream

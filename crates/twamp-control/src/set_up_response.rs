@@ -16,18 +16,18 @@ pub struct SetUpResponse {
     /// UTF-8 string up to 80 bytes, padded with zeros if shorter. Tells `Server` which shared
     /// secret the client wishes to use to authenticate or encrypt.
     ///
-    /// Unused in [unauthenticated mode](crate::security_mode::Mode::UnAuthenticated) and
+    /// Unused in [unauthenticated mode](crate::security_mode::Mode::Unauthenticated) and
     /// acts as MBZ (Must Be Zero).
     pub key_id: [u8; 80],
 
     /// Concatenation of [challenge](crate::server_greeting::ServerGreeting::challenge), AES
     /// Session-Key and HMAC-SHA1 Session-Key.
     ///
-    /// Unused in [unauthenticated mode](crate::security_mode::Mode::UnAuthenticated) and
+    /// Unused in [unauthenticated mode](crate::security_mode::Mode::Unauthenticated) and
     /// acts as MBZ (Must Be Zero).
     pub token: [u8; 64],
 
-    /// Unused in [unauthenticated mode](crate::security_mode::Mode::UnAuthenticated) and
+    /// Unused in [unauthenticated mode](crate::security_mode::Mode::Unauthenticated) and
     /// acts as MBZ (Must Be Zero).
     pub client_iv: [u8; 16],
 }
@@ -36,13 +36,13 @@ impl SetUpResponse {
     /// Create instance from supported mode, panics otherwise.
     pub fn new(mode: Mode) -> Self {
         match mode {
-            Mode::UnAuthenticated => SetUpResponse {
+            Mode::Unauthenticated => SetUpResponse {
                 mode,
                 key_id: [0; 80],
                 token: [0; 64],
                 client_iv: [0; 16],
             },
-            Mode::Abort => panic!("Mode 0, server don't wanna continue"),
+            Mode::Reserved => panic!("Mode 0, server don't wanna continue"),
             _ => panic!("Not supported"),
         }
     }
@@ -60,14 +60,14 @@ mod tests {
 
     #[test]
     fn should_serialize_correctly() {
-        let set_up_response = SetUpResponse::new(Mode::UnAuthenticated);
+        let set_up_response = SetUpResponse::new(Mode::Unauthenticated);
         let encoded = set_up_response.to_bytes().unwrap();
         assert_eq!(encoded.len(), 164)
     }
 
     #[test]
     fn should_deserialize_to_struct() {
-        let set_up_response = SetUpResponse::new(Mode::UnAuthenticated);
+        let set_up_response = SetUpResponse::new(Mode::Unauthenticated);
         let encoded = set_up_response.to_bytes().unwrap();
         let (_rest, val) = SetUpResponse::from_bytes((&encoded, 0)).unwrap();
         assert_eq!(val, set_up_response)

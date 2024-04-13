@@ -91,7 +91,7 @@ impl ControlClient {
         info!("Preparing Set-Up-Response");
         let set_up_response = SetUpResponse::new(Mode::Unauthenticated);
         debug!("Set-Up-Response: {:?}", set_up_response);
-        let encoded = set_up_response.to_bytes().unwrap();
+        let encoded = set_up_response.unwrap().to_bytes().unwrap();
         self.stream
             .as_mut()
             .unwrap()

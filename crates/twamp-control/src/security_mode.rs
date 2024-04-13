@@ -1,7 +1,7 @@
 use deku::prelude::*;
 use num_enum::IntoPrimitive;
 
-/// Security Mode. See details in
+/// Security Mode of TWAMP session. See details in
 /// [RFC 4656](https://datatracker.ietf.org/doc/html/rfc4656#section-3.1).
 #[derive(Clone, Debug, Default, PartialEq, Copy, IntoPrimitive, DekuRead, DekuWrite)]
 #[repr(u32)]

@@ -11,4 +11,5 @@ bytes = "1.6.0"
 rand = "0.8.5"
 tracing = "0.1.40"
 num_enum = "0.7.2"
+anyhow = "1.0.81"
 deku = { workspace = true }

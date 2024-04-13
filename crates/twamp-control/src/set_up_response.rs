@@ -1,6 +1,5 @@
-#![allow(dead_code)]
-
 use crate::security_mode::Mode;
+use anyhow::Result;
 use deku::prelude::*;
 
 /// Sent by Control-Client to Server through TWAMP-Control after receiving
@@ -10,40 +9,45 @@ use deku::prelude::*;
 pub struct SetUpResponse {
     /// The [security mode](crate::security_mode::Mode) that `Control-Client` wishes to use.
     /// It **should** be a mode that the Server supports, which it had sent in
-    /// [Server Greeting](crate::server_greeting::ServerGreeting::mode).
-    pub mode: Mode,
+    /// [Server Greeting](crate::server_greeting::ServerGreeting).
+    mode: Mode,
 
     /// UTF-8 string up to 80 bytes, padded with zeros if shorter. Tells `Server` which shared
     /// secret the client wishes to use to authenticate or encrypt.
     ///
     /// Unused in [unauthenticated mode](crate::security_mode::Mode::Unauthenticated) and
     /// acts as MBZ (Must Be Zero).
-    pub key_id: [u8; 80],
+    key_id: [u8; 80],
 
     /// Concatenation of [challenge](crate::server_greeting::ServerGreeting::challenge), AES
     /// Session-Key and HMAC-SHA1 Session-Key.
     ///
     /// Unused in [unauthenticated mode](crate::security_mode::Mode::Unauthenticated) and
     /// acts as MBZ (Must Be Zero).
-    pub token: [u8; 64],
+    token: [u8; 64],
 
     /// Unused in [unauthenticated mode](crate::security_mode::Mode::Unauthenticated) and
     /// acts as MBZ (Must Be Zero).
-    pub client_iv: [u8; 16],
+    client_iv: [u8; 16],
 }
 
 impl SetUpResponse {
-    /// Create instance from supported mode, panics otherwise.
-    pub fn new(mode: Mode) -> Self {
+    /// Attempt to create Set-Up-Response with provided mode.
+    ///
+    /// Errors if the provided mode is not supported by `twamp-rs`.
+    pub fn new(mode: Mode) -> Result<Self, String> {
         match mode {
-            Mode::Unauthenticated => SetUpResponse {
+            Mode::Reserved | Mode::Unauthenticated => Ok(SetUpResponse {
                 mode,
                 key_id: [0; 80],
                 token: [0; 64],
                 client_iv: [0; 16],
-            },
-            Mode::Reserved => panic!("Mode 0, server don't wanna continue"),
-            _ => panic!("Not supported"),
+            }),
+            _ => Err(format!(
+                "twamp-rs ONLY supports unauthenticated mode, mode provided is {:?}",
+                mode
+            )
+            .to_string()),
         }
     }
 }
@@ -53,21 +57,95 @@ mod tests {
     use super::*;
     use std::mem::size_of;
 
+    const SET_UP_RESPONSE_LENGTH_IN_BYTES: usize = 164;
+
     #[test]
-    fn should_have_correct_size() {
-        assert_eq!(size_of::<SetUpResponse>(), 164)
+    fn unused_key_id_in_unauth_mode() {
+        let set_up_response = SetUpResponse::new(Mode::Unauthenticated)
+            .expect("should have created set_up_response.");
+        assert_eq!(set_up_response.key_id.iter().fold(0, |acc, v| acc + v), 0);
     }
 
     #[test]
-    fn should_serialize_correctly() {
-        let set_up_response = SetUpResponse::new(Mode::Unauthenticated);
+    fn unused_token_in_unauth_mode() {
+        let set_up_response = SetUpResponse::new(Mode::Unauthenticated)
+            .expect("should have created set_up_response.");
+        assert_eq!(set_up_response.token.iter().fold(0, |acc, v| acc + v), 0);
+    }
+
+    #[test]
+    fn unused_client_iv_in_unauth_mode() {
+        let set_up_response = SetUpResponse::new(Mode::Unauthenticated)
+            .expect("should have created set_up_response.");
+        assert_eq!(
+            set_up_response.client_iv.iter().fold(0, |acc, v| acc + v),
+            0
+        );
+    }
+
+    #[test]
+    fn unused_key_id_in_reserved_mode() {
+        let set_up_response =
+            SetUpResponse::new(Mode::Reserved).expect("should have created set_up_response.");
+        assert_eq!(set_up_response.key_id.iter().fold(0, |acc, v| acc + v), 0);
+    }
+
+    #[test]
+    fn unused_token_in_reserved_mode() {
+        let set_up_response =
+            SetUpResponse::new(Mode::Reserved).expect("should have created set_up_response.");
+        assert_eq!(set_up_response.token.iter().fold(0, |acc, v| acc + v), 0);
+    }
+
+    #[test]
+    fn unused_client_iv_in_reserved_mode() {
+        let set_up_response =
+            SetUpResponse::new(Mode::Reserved).expect("should have created set_up_response.");
+        assert_eq!(
+            set_up_response.client_iv.iter().fold(0, |acc, v| acc + v),
+            0
+        );
+    }
+
+    /// Unsupported mode by twamp-rs.
+    #[test]
+    #[should_panic]
+    fn panic_on_mode_auth() {
+        SetUpResponse::new(Mode::Authenticated).expect("should have created set_up_response.");
+    }
+
+    /// Unsupported mode by twamp-rs.
+    #[test]
+    #[should_panic]
+    fn panic_on_mode_encrypted() {
+        SetUpResponse::new(Mode::Encrypted).expect("should have created set_up_response.");
+    }
+
+    /// Unsupported mode by twamp-rs.
+    #[test]
+    #[should_panic]
+    fn panic_on_mode_mixed_security() {
+        SetUpResponse::new(Mode::EncryptedControlUnauthTest)
+            .expect("should have created set_up_response.");
+    }
+
+    #[test]
+    fn struct_has_correct_size() {
+        assert_eq!(size_of::<SetUpResponse>(), SET_UP_RESPONSE_LENGTH_IN_BYTES)
+    }
+
+    #[test]
+    fn serialize_to_correct_length_of_bytes() {
+        let set_up_response = SetUpResponse::new(Mode::Unauthenticated)
+            .expect("should have created set_up_response.");
         let encoded = set_up_response.to_bytes().unwrap();
-        assert_eq!(encoded.len(), 164)
+        assert_eq!(encoded.len(), SET_UP_RESPONSE_LENGTH_IN_BYTES)
     }
 
     #[test]
-    fn should_deserialize_to_struct() {
-        let set_up_response = SetUpResponse::new(Mode::Unauthenticated);
+    fn deserialize_to_struct() {
+        let set_up_response = SetUpResponse::new(Mode::Unauthenticated)
+            .expect("should have created set_up_response.");
         let encoded = set_up_response.to_bytes().unwrap();
         let (_rest, val) = SetUpResponse::from_bytes((&encoded, 0)).unwrap();
         assert_eq!(val, set_up_response)

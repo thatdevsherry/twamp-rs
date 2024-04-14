@@ -37,7 +37,8 @@ impl ServerStart {
                 .collect::<Vec<u8>>()
                 .try_into()
                 .unwrap(),
-            start_time: TimeStamp::try_from(start_time).expect("should have created Start-Time."),
+            start_time: TimeStamp::try_from(start_time)
+                .expect("should have converted duration to timestamp."),
             mbz_end: [0; 8],
         }
     }
@@ -57,8 +58,8 @@ impl ServerStart {
 mod tests {
     use super::*;
     use std::{collections::HashSet, mem::size_of};
-    const SERVER_START_LENGTH_IN_BYTES: usize = 48;
 
+    const SERVER_START_LENGTH_IN_BYTES: usize = 48;
     const TIME: Duration = Duration::new(1713023152, 123456789);
 
     #[test]

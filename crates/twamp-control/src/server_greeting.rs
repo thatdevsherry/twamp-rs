@@ -233,7 +233,7 @@ mod tests {
     #[test]
     fn unused_are_zeros() {
         let server_greeting = ServerGreeting::new(&[Mode::Reserved]);
-        assert!(server_greeting.unused == &[0; 12][..]);
+        assert!(server_greeting.unused == [0; 12]);
     }
 
     #[test]
@@ -266,7 +266,7 @@ mod tests {
     #[test]
     fn mbz_are_zeros() {
         let server_greeting = ServerGreeting::new(&[Mode::Reserved]);
-        assert!(server_greeting.mbz == &[0; 12][..]);
+        assert!(server_greeting.mbz == [0; 12]);
     }
 
     #[test]

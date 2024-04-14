@@ -136,7 +136,7 @@ impl RequestTwSession {
             // Must be zero.
             sid: [0; 16],
             padding_length: 0,
-            start_time: TimeStamp::new(),
+            start_time: TimeStamp::default(),
             timeout: [0; 8],
             type_p_descriptor: 0,
             mbz: [0; 8],

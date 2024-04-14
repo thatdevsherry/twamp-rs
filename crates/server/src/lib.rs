@@ -1,13 +1,16 @@
+use std::time::Duration;
+
 use anyhow::Result;
 use deku::prelude::*;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tracing::*;
+use twamp_control::accept::Accept;
 use twamp_control::accept_session::AcceptSession;
 use twamp_control::constants::Messages;
 use twamp_control::request_tw_session::RequestTwSession;
 use twamp_control::security_mode::Mode;
-use twamp_control::server_start::{Accept, ServerStart};
+use twamp_control::server_start::ServerStart;
 use twamp_control::{server_greeting::ServerGreeting, set_up_response::SetUpResponse};
 
 /// Server is responsible for handling incoming [TWAMP-Control](twamp_control) connection from a
@@ -86,7 +89,7 @@ impl Server {
 
     pub async fn send_server_start(&mut self) -> Result<ServerStart> {
         info!("Sending Server-Start");
-        let server_start = ServerStart::default();
+        let server_start = ServerStart::new(Accept::Ok, Duration::new(123456, 789));
         debug!("Server-Start: {:?}", server_start);
         let encoded = server_start.to_bytes().unwrap();
         self.socket.write_all(&encoded[..]).await?;

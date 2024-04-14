@@ -86,10 +86,16 @@ impl ServerGreeting {
     ///
     /// let my_count_value = 32769;
     /// let server_greeting = ServerGreeting::new(&[Mode::Unauthenticated]).with_count(my_count_value);
+    /// assert_eq!(server_greeting.count(), my_count_value);
     /// ```
     pub fn with_count(mut self, count: u32) -> Self {
         self.count = count;
         self
+    }
+
+    /// Get the value of count field.
+    pub fn count(&self) -> u32 {
+        self.count
     }
 
     /// Checks if the provided mode exists in greeting's `Mode` field.

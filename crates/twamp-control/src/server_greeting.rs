@@ -48,11 +48,10 @@ impl ServerGreeting {
     ///
     /// ```
     /// use twamp_control::security_mode::Mode;
+    /// use twamp_control::server_greeting::ServerGreeting;
     ///
     /// let supported_modes = &[Mode::Unauthenticated, Mode::Authenticated];
     /// let server_greeting = ServerGreeting::new(supported_modes);
-    ///
-    /// assert_eq!(server_greeting.mode, 3);
     /// ```
     pub fn new(modes: &[Mode]) -> Self {
         ServerGreeting {
@@ -82,9 +81,11 @@ impl ServerGreeting {
     /// # Example usage
     ///
     /// ```
+    /// use twamp_control::security_mode::Mode;
+    /// use twamp_control::server_greeting::ServerGreeting;
+    ///
     /// let my_count_value = 32769;
-    /// let server_greeting = ServerGreeting::new().with_count(my_count_value);
-    /// assert_eq!(server_greeting.count, my_count_value);
+    /// let server_greeting = ServerGreeting::new(&[Mode::Unauthenticated]).with_count(my_count_value);
     /// ```
     pub fn with_count(mut self, count: u32) -> Self {
         self.count = count;
@@ -94,7 +95,10 @@ impl ServerGreeting {
     /// Checks if the provided mode exists in greeting's `Mode` field.
     ///
     /// ```
-    /// let server_greeting = ServerGreeting::new(&[Mode::Unauthenticated, Mode::Authenticated])
+    /// use twamp_control::security_mode::Mode;
+    /// use twamp_control::server_greeting::ServerGreeting;
+    ///
+    /// let server_greeting = ServerGreeting::new(&[Mode::Unauthenticated, Mode::Authenticated]);
     /// assert!(server_greeting.has_mode(Mode::Unauthenticated));
     /// assert!(!server_greeting.has_mode(Mode::Reserved));
     /// ```

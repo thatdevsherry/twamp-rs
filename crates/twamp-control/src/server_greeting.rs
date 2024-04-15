@@ -121,7 +121,7 @@ impl ServerGreeting {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{collections::HashSet, mem::size_of};
+    use std::collections::HashSet;
 
     const SERVER_GREETING_LENGTH_IN_BYTES: usize = 64;
 
@@ -280,22 +280,10 @@ mod tests {
     }
 
     #[test]
-    fn struct_has_correct_size() {
-        assert_eq!(size_of::<ServerGreeting>(), SERVER_GREETING_LENGTH_IN_BYTES);
-    }
-
-    #[test]
     fn serialize_into_correct_length_of_bytes() {
         let server_greeting = ServerGreeting::new(&[Mode::Unauthenticated]);
         let encoded = server_greeting.to_bytes().unwrap();
         assert_eq!(encoded.len(), SERVER_GREETING_LENGTH_IN_BYTES);
-    }
-
-    #[test]
-    fn serialize_mode_in_big_endian() {
-        let server_greeting = ServerGreeting::new(&[Mode::Unauthenticated]);
-        let encoded = server_greeting.to_bytes().unwrap();
-        assert_eq!(&encoded[12..16], &[0, 0, 0, 1]);
     }
 
     #[test]

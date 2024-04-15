@@ -1,7 +1,7 @@
 use anyhow::Result;
 use deku::prelude::*;
 use std::mem::size_of;
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::net::{IpAddr, Ipv4Addr, SocketAddrV4};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tracing::*;
@@ -12,6 +12,7 @@ use twamp_control::security_mode::Mode;
 use twamp_control::server_greeting::ServerGreeting;
 use twamp_control::server_start::ServerStart;
 use twamp_control::set_up_response::SetUpResponse;
+use twamp_control::timestamp::TimeStamp;
 
 /// Control-Client is responsible for initiating and handling TWAMP-Control with a Server.
 ///
@@ -105,7 +106,26 @@ impl ControlClient {
     /// `TWAMP-Control`.
     pub async fn send_request_tw_session(&mut self) -> Result<()> {
         info!("Preparing Request-TW-Session");
-        let request_tw_session = RequestTwSession::from(self.stream.as_ref().unwrap());
+        let stream = self.stream.as_ref().unwrap();
+        let sender_address = match stream.local_addr().unwrap().ip() {
+            IpAddr::V4(ip) => ip,
+            IpAddr::V6(ip) => panic!("da hail did v6 come from: {ip}"),
+        }
+        .into();
+        let sender_port = stream.local_addr().unwrap().port();
+        let receiver_address = match stream.peer_addr().unwrap().ip() {
+            IpAddr::V4(ip) => ip,
+            IpAddr::V6(ip) => panic!("da hail did v6 come from: {ip}"),
+        }
+        .into();
+        let receiver_port = stream.peer_addr().unwrap().port();
+        let request_tw_session = RequestTwSession::new(
+            sender_address,
+            sender_port,
+            receiver_address,
+            receiver_port,
+            TimeStamp::default(),
+        );
         debug!("request-tw-session: {:?}", request_tw_session);
         let encoded = request_tw_session.to_bytes().unwrap();
         self.stream

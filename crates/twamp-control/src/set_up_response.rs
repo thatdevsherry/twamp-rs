@@ -55,7 +55,6 @@ impl SetUpResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::mem::size_of;
 
     const SET_UP_RESPONSE_LENGTH_IN_BYTES: usize = 164;
 
@@ -127,11 +126,6 @@ mod tests {
     fn panic_on_mode_mixed_security() {
         SetUpResponse::new(Mode::EncryptedControlUnauthTest)
             .expect("should have created set_up_response.");
-    }
-
-    #[test]
-    fn struct_has_correct_size() {
-        assert_eq!(size_of::<SetUpResponse>(), SET_UP_RESPONSE_LENGTH_IN_BYTES)
     }
 
     #[test]

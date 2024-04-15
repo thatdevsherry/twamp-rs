@@ -6,7 +6,7 @@ use num_enum::IntoPrimitive;
 /// Defined in [RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357/#section-8.4).
 #[derive(Clone, Copy, Debug, PartialEq, IntoPrimitive, DekuRead, DekuWrite)]
 #[repr(u8)]
-#[deku(type = "u8")]
+#[deku(type = "u8", endian = "endian", ctx = "endian: deku::ctx::Endian")]
 pub enum CommandNumber {
     Forbidden = 1,
     StartSession = 2,

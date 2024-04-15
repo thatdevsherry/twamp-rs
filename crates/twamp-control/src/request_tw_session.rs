@@ -1,42 +1,43 @@
+use std::net::Ipv4Addr;
+
 use crate::{command_number::CommandNumber, timestamp::TimeStamp};
 use deku::prelude::*;
-use std::net::IpAddr;
-use tokio::net::TcpStream;
 
-#[derive(Clone, Debug, Default, PartialEq, DekuRead, DekuWrite)]
+#[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]
 pub struct RequestTwSession {
     /// Command number field. The value of Request-TW-Session is `5`.
-    pub command_number: u8,
+    command_number: CommandNumber,
+
+    /// Must be zero.
+    #[deku(bits = "4")]
+    mbz_first: u8,
 
     /// IP version numbers for sender and receiver. Meaningful values are `4` and `6`.
-    ///
-    /// This field also combines the MBZ before IPVN. Since MBZ & IPVN are 4-bits each, we can
-    /// represent them both using `u8`, which will add padding of 5 zeros and use the last 3 digits
-    /// for representing IPVN.
-    pub ipvn: u8,
+    #[deku(bits = "4")]
+    ipvn: u8,
 
     /// Used to inform Server to act as sender in TWAMP-Test.
     ///
     /// In TWAMP, it is always set to 0.
-    pub conf_sender: u8,
+    conf_sender: u8,
 
     /// Used to inform Server to act as receiver in TWAMP-Test.
     ///
     /// In TWAMP, it is always set to 0.
-    pub conf_receiver: u8,
+    conf_receiver: u8,
 
     /// Used by Control-Client to determine when to send test packets.
     ///
     /// Must be zero in TWAMP as Session-Reflector does not process incoming packets and only
     /// reflects, and does not require this info.
-    pub number_of_schedule_slots: u32,
+    number_of_schedule_slots: u32,
 
     /// Number of active measurement packets to be sent during TWAMP-Session.
     ///
     /// Must be zero as Session-Reflector does not process incoming packets, therefore does not
     /// need to know the number of packets.
-    pub number_of_packets: u32,
+    number_of_packets: u32,
 
     /// UDP port on which Session-Sender will send from and receive TWAMP-Test packets.
     pub sender_port: u16,
@@ -46,19 +47,19 @@ pub struct RequestTwSession {
     pub receiver_port: u16,
 
     /// IP address of sender. Can be set to 0 in which case the IP of Control-Client will be used.
-    pub sender_address: u32,
+    pub sender_address: Ipv4Addr,
 
     /// Utilised if [IPVN](Self::ipvn) is `6` otherwise is MBZ (Must Be Zero).
-    pub sender_address_cont: [u8; 12],
+    sender_address_cont: [u8; 12],
 
     /// IP address of receiver. Can be set to 0 in which case the IP of Server will be used.
-    pub receiver_address: u32,
+    pub receiver_address: Ipv4Addr,
 
     /// Utilised if [IPVN](Self::ipvn) is `6` otherwise is MBZ (Must Be Zero).
-    pub receiver_address_cont: [u8; 12],
+    receiver_address_cont: [u8; 12],
 
     /// Session Identifier. Must be 0 since it's generated on receiving side.
-    pub sid: [u8; 16],
+    sid: u128,
 
     /// Number of bytes to append to normal TWAMP-Test packet.
     pub padding_length: u32,
@@ -74,72 +75,52 @@ pub struct RequestTwSession {
     /// Session-Reflector MUST reflect them if they arrive within the Timeout interval following
     /// the reception of the Stop-Sessions message. The Session-Reflector MUST NOT reflect packets
     /// that are received beyond the timeout.
-    pub timeout: [u8; 8],
+    pub timeout: u64,
 
     /// Set [DSCP](https://datatracker.ietf.org/doc/html/rfc2474).
     ///
     /// If present, the same value **must** be used in TWAMP-Test packets.
-    pub type_p_descriptor: u32,
+    type_p_descriptor: u32,
+
+    octets_to_be_reflected: u16,
+    length_of_padding_to_reflect: u16,
 
     /// MBZ (Must Be Zero).
-    pub mbz: [u8; 8],
+    mbz_last: u32,
 
-    pub hmac: [u8; 16],
-}
-
-impl From<&TcpStream> for RequestTwSession {
-    fn from(value: &TcpStream) -> Self {
-        let request_tw_session = RequestTwSession::new(CommandNumber::RequestTwSession);
-        let sender_address: u32 = match value.local_addr().unwrap().ip() {
-            IpAddr::V4(ip) => ip,
-            IpAddr::V6(ip) => panic!("da hail did v6 come from: {ip}"),
-        }
-        .into();
-        let sender_port = value.local_addr().unwrap().port();
-        let receiver_address: u32 = match value.peer_addr().unwrap().ip() {
-            IpAddr::V4(ip) => ip,
-            IpAddr::V6(ip) => panic!("da hail did v6 come from: {ip}"),
-        }
-        .into();
-        let receiver_port = value.peer_addr().unwrap().port();
-        RequestTwSession {
-            sender_address,
-            sender_port,
-            receiver_address,
-            receiver_port,
-            ..request_tw_session
-        }
-    }
+    hmac: [u8; 16],
 }
 
 impl RequestTwSession {
-    pub fn new(command_number: CommandNumber) -> Self {
+    pub fn new(
+        sender_address: Ipv4Addr,
+        sender_port: u16,
+        receiver_address: Ipv4Addr,
+        receiver_port: u16,
+        start_time: TimeStamp,
+    ) -> Self {
         RequestTwSession {
-            command_number: command_number as u8,
+            command_number: CommandNumber::RequestTwSession,
+            mbz_first: 0, // Must be zero.
             ipvn: 4,
-
-            // Must be zero.
-            conf_sender: 0,
-            // Must be zero.
-            conf_receiver: 0,
-            // Must be zero.
-            number_of_schedule_slots: 0,
-            // Must be zero.
-            number_of_packets: 0,
-
-            sender_port: 0,
-            receiver_port: 0,
-            sender_address: 0,
+            conf_sender: 0,              // Must be zero.
+            conf_receiver: 0,            // Must be zero.
+            number_of_schedule_slots: 0, // Must be zero.
+            number_of_packets: 0,        // Must be zero.
+            sender_port,
+            receiver_port,
+            sender_address,
             sender_address_cont: [0; 12],
-            receiver_address: 0,
+            receiver_address,
             receiver_address_cont: [0; 12],
-            // Must be zero.
-            sid: [0; 16],
+            sid: 0, // Must be zero.
             padding_length: 0,
-            start_time: TimeStamp::default(),
-            timeout: [0; 8],
+            start_time,
+            timeout: 0,
             type_p_descriptor: 0,
-            mbz: [0; 8],
+            octets_to_be_reflected: 0,
+            length_of_padding_to_reflect: 0,
+            mbz_last: 0, // Must be zero.
             hmac: [0; 16],
         }
     }
@@ -148,23 +129,272 @@ impl RequestTwSession {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::mem::size_of;
+
+    const REQUEST_TW_SESSION_LENGTH_IN_BYTES: usize = 112;
 
     #[test]
-    fn should_have_correct_size() {
-        assert_eq!(size_of::<RequestTwSession>(), 112)
+    fn command_number_is_correct() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(
+            request_tw_session.command_number,
+            CommandNumber::RequestTwSession
+        );
     }
 
     #[test]
-    fn should_serialize_correctly() {
-        let request_tw_session = RequestTwSession::default();
+    fn first_mbz_are_zeros() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(request_tw_session.mbz_first, 0u8);
+    }
+
+    /// Only support IPv4 for now.
+    #[test]
+    fn ipvn_is_correct() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(request_tw_session.ipvn, 4u8);
+    }
+
+    #[test]
+    fn conf_sender_is_zero() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(request_tw_session.conf_sender, 0u8);
+    }
+
+    #[test]
+    fn conf_receiver_is_zero() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(request_tw_session.conf_receiver, 0u8);
+    }
+
+    #[test]
+    fn number_of_schedule_slots_is_zero() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(request_tw_session.number_of_schedule_slots, 0u32);
+    }
+
+    #[test]
+    fn number_of_packets_is_zero() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(request_tw_session.number_of_packets, 0u32);
+    }
+
+    #[test]
+    fn sender_port_is_assigned() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            12345,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(request_tw_session.sender_port, 12345);
+    }
+
+    #[test]
+    fn receiver_port_is_assigned() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            12345,
+            TimeStamp::default(),
+        );
+        assert_eq!(request_tw_session.receiver_port, 12345);
+    }
+
+    #[test]
+    fn sender_address_is_assigned() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(
+            request_tw_session.sender_address,
+            Ipv4Addr::new(127, 0, 0, 1)
+        );
+    }
+
+    /// Supporting only Ipv4 so this should be MBZ.
+    #[test]
+    fn sender_address_cont_is_mbz() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(request_tw_session.sender_address_cont, [0; 12]);
+    }
+
+    #[test]
+    fn receiver_address_is_assigned() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(
+            request_tw_session.receiver_address,
+            Ipv4Addr::new(127, 0, 0, 1)
+        );
+    }
+
+    /// Supporting only Ipv4 so this should be MBZ.
+    #[test]
+    fn receiver_address_cont_is_mbz() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(request_tw_session.receiver_address_cont, [0; 12]);
+    }
+
+    #[test]
+    fn sid_is_zero() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(request_tw_session.sid, 0);
+    }
+
+    #[test]
+    #[ignore]
+    fn padding_length_is_assigned() {
+        todo!();
+    }
+
+    #[test]
+    fn start_time_is_assigned() {
+        let timestamp = TimeStamp::default();
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            timestamp,
+        );
+        assert_eq!(request_tw_session.start_time, timestamp);
+    }
+
+    #[test]
+    #[ignore]
+    fn timeout_is_assigned() {
+        todo!();
+    }
+
+    #[test]
+    #[ignore]
+    fn type_p_descriptor_is_assigned() {
+        todo!();
+    }
+
+    #[test]
+    #[ignore]
+    fn octets_to_be_reflected_is_assigned() {
+        todo!();
+    }
+
+    #[test]
+    #[ignore]
+    fn length_of_padding_to_reflect_is_assigned() {
+        todo!();
+    }
+
+    #[test]
+    fn last_mbz_are_zeros() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
+        assert_eq!(request_tw_session.mbz_last, 0);
+    }
+
+    #[test]
+    #[ignore]
+    fn hmac_is_assigned() {
+        todo!();
+    }
+
+    #[test]
+    fn struct_serialized_has_size_acc_to_rfc() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
         let encoded = request_tw_session.to_bytes().unwrap();
-        assert_eq!(encoded.len(), 112)
+        assert_eq!(encoded.len(), REQUEST_TW_SESSION_LENGTH_IN_BYTES)
     }
 
     #[test]
-    fn should_deserialize_to_struct() {
-        let request_tw_session = RequestTwSession::default();
+    fn deserialize_to_struct() {
+        let request_tw_session = RequestTwSession::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            Ipv4Addr::new(127, 0, 0, 1),
+            0,
+            TimeStamp::default(),
+        );
         let encoded = request_tw_session.to_bytes().unwrap();
         let (_rest, val) = RequestTwSession::from_bytes((&encoded, 0)).unwrap();
         assert_eq!(val, request_tw_session)

@@ -57,7 +57,7 @@ impl ServerStart {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{collections::HashSet, mem::size_of};
+    use std::collections::HashSet;
 
     const SERVER_START_LENGTH_IN_BYTES: usize = 48;
     const TIME: Duration = Duration::new(1713023152, 123456789);
@@ -127,11 +127,6 @@ mod tests {
         let server_start = ServerStart::new(Accept::Ok, TIME);
         let server_iv_bytes_unique = server_start.server_iv.iter().collect::<HashSet<_>>();
         assert!(server_iv_bytes_unique.len() > 1);
-    }
-
-    #[test]
-    fn should_have_correct_bytes_of_struct() {
-        assert_eq!(size_of::<ServerStart>(), SERVER_START_LENGTH_IN_BYTES);
     }
 
     #[test]

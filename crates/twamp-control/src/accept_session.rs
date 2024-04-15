@@ -54,18 +54,13 @@ impl Default for AcceptSession {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::mem::size_of;
-
-    #[test]
-    fn should_have_correct_size_of_struct() {
-        assert_eq!(size_of::<AcceptSession>(), 48);
-    }
+    const ACCEPT_SESSION_LENGTH_IN_BYTES: usize = 48;
 
     #[test]
     fn should_serialize_into_correct_length_of_bytes() {
         let accept_session = AcceptSession::default();
         let encoded = accept_session.to_bytes().unwrap();
-        assert_eq!(encoded.len(), size_of::<AcceptSession>());
+        assert_eq!(encoded.len(), ACCEPT_SESSION_LENGTH_IN_BYTES);
     }
 
     #[test]

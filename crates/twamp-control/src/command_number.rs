@@ -9,8 +9,8 @@ use num_enum::IntoPrimitive;
 #[deku(type = "u8", endian = "endian", ctx = "endian: deku::ctx::Endian")]
 pub enum CommandNumber {
     Forbidden = 1,
-    StartSession = 2,
-    StopSession = 3,
+    StartSessions = 2,
+    StopSessions = 3,
     RequestTwSession = 5,
     Experimentation = 6,
 }
@@ -22,8 +22,8 @@ mod tests {
     #[test]
     fn should_have_valid_discriminants() {
         let forbidden: u8 = CommandNumber::Forbidden.into();
-        let start_session: u8 = CommandNumber::StartSession.into();
-        let stop_session: u8 = CommandNumber::StopSession.into();
+        let start_session: u8 = CommandNumber::StartSessions.into();
+        let stop_session: u8 = CommandNumber::StopSessions.into();
         let request_tw_session: u8 = CommandNumber::RequestTwSession.into();
         let experimentation: u8 = CommandNumber::Experimentation.into();
         assert_eq!(forbidden, 1u8);

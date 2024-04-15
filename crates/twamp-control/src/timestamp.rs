@@ -14,7 +14,7 @@ impl TryFrom<Duration> for TimeStamp {
     type Error = &'static str;
     /// Convert from a Duration.
     ///
-    /// **Note** that it assumes the duration is from [`UNIX_EPOCH`](std::time::UNIX_EPOCH).
+    /// **Note** that it assumes the duration is from [`UNIX_EPOCH`].
     ///
     /// It performs conversion from `UNIX_EPOCH` duration to [`NTP_EPOCH`] duration.
     fn try_from(value: Duration) -> Result<Self, Self::Error> {

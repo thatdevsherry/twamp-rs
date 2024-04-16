@@ -8,6 +8,7 @@ use deku::prelude::*;
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]
 pub struct StartSessions {
+    #[deku(assert_eq = "CommandNumber::StartSessions")]
     command_number: CommandNumber,
     #[deku(assert_eq = "[0u8; 15]")]
     mbz: [u8; 15],

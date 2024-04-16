@@ -7,6 +7,7 @@ use deku::prelude::*;
 #[deku(endian = "big")]
 pub struct RequestTwSession {
     /// Command number field. The value of Request-TW-Session is `5`.
+    #[deku(assert_eq = "CommandNumber::RequestTwSession")]
     command_number: CommandNumber,
 
     /// Must be zero.

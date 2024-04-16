@@ -8,6 +8,7 @@ use deku::prelude::*;
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]
 pub struct StopSessions {
+    #[deku(assert_eq = "CommandNumber::StopSessions")]
     command_number: CommandNumber,
     accept: Accept,
     #[deku(assert_eq = "0u16")]

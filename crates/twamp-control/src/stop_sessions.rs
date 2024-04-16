@@ -10,6 +10,7 @@ use deku::prelude::*;
 pub struct StopSessions {
     command_number: CommandNumber,
     accept: Accept,
+    #[deku(assert_eq = "0u16")]
     mbz: u16,
     hmac: [u8; 16],
 }

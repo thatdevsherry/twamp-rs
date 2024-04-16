@@ -9,6 +9,7 @@ use rand::random;
 #[deku(endian = "big")]
 pub struct ServerStart {
     /// MBZ (Must Be Zero).
+    #[deku(assert_eq = "[0u8; 15]")]
     mbz_start: [u8; 15],
 
     /// Indicates Server's willingness to continue. See [list of possible values](Accept).
@@ -22,6 +23,7 @@ pub struct ServerStart {
     start_time: TimeStamp,
 
     /// MBZ (Must Be Zero).
+    #[deku(assert_eq = "[0u8; 8]")]
     mbz_end: [u8; 8],
 }
 

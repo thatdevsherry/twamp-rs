@@ -9,6 +9,7 @@ pub struct AcceptSession {
     pub accept: Accept,
 
     /// MBZ (Must Be Zero).
+    #[deku(assert_eq = "0u8")]
     mbz_first: u8,
 
     /// Either the port that was present in Request-TW-Session or an alternative port in case the
@@ -30,6 +31,7 @@ pub struct AcceptSession {
     pub server_octets: u16,
 
     /// MBZ (Must Be Zero).
+    #[deku(assert_eq = "[0u8; 8]")]
     mbz_second: [u8; 8],
 
     pub hmac: [u8; 16],

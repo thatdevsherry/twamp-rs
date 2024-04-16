@@ -10,7 +10,7 @@ pub struct RequestTwSession {
     command_number: CommandNumber,
 
     /// Must be zero.
-    #[deku(bits = "4")]
+    #[deku(bits = "4", assert_eq = "0u8")]
     mbz_first: u8,
 
     /// IP version numbers for sender and receiver. Meaningful values are `4` and `6`.
@@ -86,6 +86,7 @@ pub struct RequestTwSession {
     length_of_padding_to_reflect: u16,
 
     /// MBZ (Must Be Zero).
+    #[deku(assert_eq = "0u32")]
     mbz_last: u32,
 
     hmac: [u8; 16],

@@ -9,6 +9,7 @@ use deku::prelude::*;
 #[deku(endian = "big")]
 pub struct StartSessions {
     command_number: CommandNumber,
+    #[deku(assert_eq = "[0u8; 15]")]
     mbz: [u8; 15],
     hmac: [u8; 16],
 }

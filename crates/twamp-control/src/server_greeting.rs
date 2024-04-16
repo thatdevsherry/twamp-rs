@@ -12,6 +12,7 @@ use rand::random;
 #[deku(endian = "big")]
 pub struct ServerGreeting {
     /// Same semantics as MBZ (Must Be Zero).
+    #[deku(assert_eq = "[0u8; 12]")]
     unused: [u8; 12],
 
     /// Security mode(s) that the Server supports.
@@ -28,6 +29,7 @@ pub struct ServerGreeting {
     count: u32,
 
     /// Must Be Zero.
+    #[deku(assert_eq = "[0u8; 12]")]
     mbz: [u8; 12],
 }
 

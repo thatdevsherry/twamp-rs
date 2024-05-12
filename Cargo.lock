@@ -180,6 +180,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "deku",
+ "timestamp",
  "tokio",
  "tracing",
  "twamp-control",
@@ -695,6 +696,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "timestamp"
+version = "0.1.0"
+dependencies = [
+ "deku",
+]
+
+[[package]]
 name = "tokio"
 version = "1.37.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -818,6 +826,7 @@ dependencies = [
  "deku",
  "num_enum",
  "rand",
+ "timestamp",
  "tokio",
  "tracing",
 ]
@@ -830,6 +839,7 @@ version = "0.1.0"
 name = "twamp-test"
 version = "0.1.0"
 dependencies = [
+ "timestamp",
  "tracing",
 ]
 

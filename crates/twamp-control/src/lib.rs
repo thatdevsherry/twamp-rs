@@ -10,4 +10,3 @@ pub mod set_up_response;
 pub mod start_ack;
 pub mod start_sessions;
 pub mod stop_sessions;
-pub mod timestamp;

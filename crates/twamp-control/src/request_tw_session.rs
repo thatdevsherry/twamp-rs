@@ -1,7 +1,8 @@
 use std::net::Ipv4Addr;
 
-use crate::{command_number::CommandNumber, timestamp::TimeStamp};
+use crate::command_number::CommandNumber;
 use deku::prelude::*;
+use timestamp::timestamp::TimeStamp;
 
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]

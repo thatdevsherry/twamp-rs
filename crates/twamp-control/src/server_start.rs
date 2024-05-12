@@ -1,8 +1,8 @@
-use std::time::Duration;
-
-use crate::{accept::Accept, timestamp::TimeStamp};
+use crate::accept::Accept;
 use deku::prelude::*;
 use rand::random;
+use std::time::Duration;
+use timestamp::timestamp::TimeStamp;
 
 /// Sent by Server to Control-Client after receiving a [Set-Up-Response](crate::set_up_response::SetUpResponse) command.
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]

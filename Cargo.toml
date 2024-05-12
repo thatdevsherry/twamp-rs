@@ -1,5 +1,7 @@
 [workspace]
 members = [
+  "crates/timestamp",
+
   "crates/twamp-control",
   "crates/control-client",
   "crates/server",

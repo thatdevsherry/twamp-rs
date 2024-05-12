@@ -2,6 +2,7 @@ use anyhow::Result;
 use deku::prelude::*;
 use std::mem::size_of;
 use std::net::{IpAddr, Ipv4Addr, SocketAddrV4};
+use timestamp::timestamp::TimeStamp;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tracing::*;
@@ -12,7 +13,6 @@ use twamp_control::security_mode::Mode;
 use twamp_control::server_greeting::ServerGreeting;
 use twamp_control::server_start::ServerStart;
 use twamp_control::set_up_response::SetUpResponse;
-use twamp_control::timestamp::TimeStamp;
 
 /// Control-Client is responsible for initiating and handling TWAMP-Control with a Server.
 ///

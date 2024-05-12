@@ -6,6 +6,7 @@ use timestamp::timestamp::TimeStamp;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tracing::*;
+use twamp_control::accept::Accept;
 use twamp_control::accept_session::AcceptSession;
 use twamp_control::constants::TWAMP_CONTROL_WELL_KNOWN_PORT;
 use twamp_control::request_tw_session::RequestTwSession;
@@ -13,6 +14,9 @@ use twamp_control::security_mode::Mode;
 use twamp_control::server_greeting::ServerGreeting;
 use twamp_control::server_start::ServerStart;
 use twamp_control::set_up_response::SetUpResponse;
+use twamp_control::start_ack::StartAck;
+use twamp_control::start_sessions::StartSessions;
+use twamp_control::stop_sessions::StopSessions;
 
 /// Control-Client is responsible for initiating and handling TWAMP-Control with a Server.
 ///
@@ -46,6 +50,10 @@ impl ControlClient {
         self.server_start = Some(self.read_server_start().await?);
         self.send_request_tw_session().await?;
         self.read_accept_session().await?;
+        self.send_start_sessions().await?;
+        self.read_start_ack().await?;
+        debug!("TODO: Impelement TWAMP-Test here.");
+        self.send_stop_sessions().await?;
         Ok(())
     }
 
@@ -84,6 +92,16 @@ impl ControlClient {
         debug!("Server-Start: {:?}", server_start);
         info!("Read Server-Start");
         Ok(server_start)
+    }
+
+    pub async fn read_start_ack(&mut self) -> Result<StartAck> {
+        let mut buf = [0; size_of::<StartAck>()];
+        info!("Reading Start-Ack");
+        self.stream.as_mut().unwrap().read(&mut buf).await?;
+        let (_rest, start_ack) = StartAck::from_bytes((&buf, 0)).unwrap();
+        debug!("Start-Ack: {:?}", start_ack);
+        info!("Read Start-Ack");
+        Ok(start_ack)
     }
 
     /// Creates a `SetUpResponse`, converts to bytes and sends it out on
@@ -134,6 +152,34 @@ impl ControlClient {
             .write_all(&encoded[..])
             .await?;
         info!("Request-TW-Session sent");
+        Ok(())
+    }
+
+    pub async fn send_start_sessions(&mut self) -> Result<()> {
+        info!("Preparing Start-Sessions");
+        let start_sessions = StartSessions::new();
+        debug!("Start-Sessions: {:?}", start_sessions);
+        let encoded = start_sessions.to_bytes().unwrap();
+        self.stream
+            .as_mut()
+            .unwrap()
+            .write_all(&encoded[..])
+            .await?;
+        info!("Start-Sessions sent");
+        Ok(())
+    }
+
+    pub async fn send_stop_sessions(&mut self) -> Result<()> {
+        info!("Preparing Stop-Sessions");
+        let stop_sessions = StopSessions::new(Accept::Ok);
+        debug!("Stop-Sessions: {:?}", stop_sessions);
+        let encoded = stop_sessions.to_bytes().unwrap();
+        self.stream
+            .as_mut()
+            .unwrap()
+            .write_all(&encoded[..])
+            .await?;
+        info!("Stop-Sessions sent");
         Ok(())
     }
 }

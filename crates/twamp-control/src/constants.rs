@@ -4,4 +4,6 @@ pub const TWAMP_CONTROL_WELL_KNOWN_PORT: u16 = 4000;
 pub enum Messages {
     SetUpResponse,
     RequestTwSession,
+    StartSessions,
+    StopSessions,
 }

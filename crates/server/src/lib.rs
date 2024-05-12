@@ -11,6 +11,9 @@ use twamp_control::constants::Messages;
 use twamp_control::request_tw_session::RequestTwSession;
 use twamp_control::security_mode::Mode;
 use twamp_control::server_start::ServerStart;
+use twamp_control::start_ack::StartAck;
+use twamp_control::start_sessions::StartSessions;
+use twamp_control::stop_sessions::StopSessions;
 use twamp_control::{server_greeting::ServerGreeting, set_up_response::SetUpResponse};
 
 /// Server is responsible for handling incoming [TWAMP-Control](twamp_control) connection from a
@@ -23,6 +26,9 @@ pub struct Server {
     server_start: Option<ServerStart>,
     request_tw_session: Option<RequestTwSession>,
     accept_session: Option<AcceptSession>,
+    start_sessions: Option<StartSessions>,
+    start_ack: Option<StartAck>,
+    stop_sessions: Option<StopSessions>,
 }
 
 impl Server {
@@ -31,8 +37,12 @@ impl Server {
             Messages::SetUpResponse
         } else if self.request_tw_session.is_none() {
             Messages::RequestTwSession
+        } else if self.start_sessions.is_none() {
+            Messages::StartSessions
+        } else if self.start_ack.is_some() {
+            Messages::StopSessions
         } else {
-            panic!("dunno what to expect");
+            panic!("Next message to expect should be defined");
         }
     }
     pub fn new(socket: TcpStream) -> Self {
@@ -43,6 +53,9 @@ impl Server {
             server_start: None,
             request_tw_session: None,
             accept_session: None,
+            start_sessions: None,
+            start_ack: None,
+            stop_sessions: None,
         }
     }
 
@@ -70,6 +83,14 @@ impl Server {
                 Messages::RequestTwSession => {
                     self.request_tw_session = Some(self.read_request_tw_session(&buf).await?);
                     self.accept_session = Some(self.send_accept_session().await?);
+                }
+                Messages::StartSessions => {
+                    self.start_sessions = Some(self.read_start_sessions(&buf).await?);
+                    self.start_ack = Some(self.send_start_ack().await?);
+                }
+                Messages::StopSessions => {
+                    debug!("TODO: Impelement TWAMP-Test.");
+                    self.stop_sessions = Some(self.read_stop_sessions(&buf).await?);
                 }
             }
         }
@@ -107,6 +128,16 @@ impl Server {
         Ok(server_greeting)
     }
 
+    pub async fn send_start_ack(&mut self) -> Result<StartAck> {
+        info!("Sending ServerGreeting");
+        let start_ack = StartAck::new(Accept::Ok);
+        debug!("Start-Ack: {:?}", start_ack);
+        let encoded = start_ack.to_bytes().unwrap();
+        self.socket.write_all(&encoded[..]).await?;
+        info!("Sent Start-Ack");
+        Ok(start_ack)
+    }
+
     pub async fn read_set_up_response(&mut self, buf: &[u8]) -> Result<SetUpResponse> {
         info!("Reading Set-Up-Response");
         let (_rest, set_up_response) = SetUpResponse::from_bytes((&buf, 0)).unwrap();
@@ -121,5 +152,21 @@ impl Server {
         debug!("Request-TW-Session: {:?}", request_tw_session);
         info!("Read Request-TW-Session");
         Ok(request_tw_session)
+    }
+
+    pub async fn read_start_sessions(&mut self, buf: &[u8]) -> Result<StartSessions> {
+        debug!("Reading Start-Sessions");
+        let (_rest, start_sessions) = StartSessions::from_bytes((&buf, 0)).unwrap();
+        debug!("Start-Sessions: {:?}", start_sessions);
+        info!("Read Start-Sessions");
+        Ok(start_sessions)
+    }
+
+    pub async fn read_stop_sessions(&mut self, buf: &[u8]) -> Result<StopSessions> {
+        debug!("Reading Stop-Sessions");
+        let (_rest, stop_sessions) = StopSessions::from_bytes((&buf, 0)).unwrap();
+        debug!("Stop-Sessions: {:?}", stop_sessions);
+        info!("Read Stop-Sessions");
+        Ok(stop_sessions)
     }
 }

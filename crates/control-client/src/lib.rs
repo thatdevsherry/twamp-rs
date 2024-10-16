@@ -45,7 +45,6 @@ impl ControlClient {
         let stream = TcpStream::connect(socket_addr).await?;
         self.stream = Some(stream);
         self.server_greeting = Some(self.read_server_greeting().await?);
-        //self.control_client.read_mode().await?;
         self.send_set_up_response().await?;
         self.server_start = Some(self.read_server_start().await?);
         self.send_request_tw_session().await?;
@@ -57,57 +56,21 @@ impl ControlClient {
         Ok(())
     }
 
-    pub async fn read_accept_session(&mut self) -> Result<AcceptSession> {
-        let mut buf = [0; size_of::<AcceptSession>()];
-        info!("Reading Accept-Session");
-        self.stream.as_mut().unwrap().read(&mut buf).await?;
-        let (_rest, accept_session) = AcceptSession::from_bytes((&buf, 0)).unwrap();
-        debug!("Accept-Session: {:?}", accept_session);
-        info!("Read Accept-Session");
-
-        Ok(accept_session)
-    }
-
-    /// Reads from TWAMP-Control stream assuming the bytes to be received
-    /// will be of a `ServerGreeting`. Converts those bytes into a `ServerGreeting`
-    /// struct and returns it.
+    /// Reads from TWAMP-Control stream assuming the bytes to be received will be of a
+    /// `ServerGreeting`. Converts those bytes into a `ServerGreeting` struct and returns it.
     pub async fn read_server_greeting(&mut self) -> Result<ServerGreeting> {
         let mut buf = [0; size_of::<ServerGreeting>()];
         info!("Reading ServerGreeting");
         self.stream.as_mut().unwrap().read(&mut buf).await?;
         let (_rest, server_greeting) = ServerGreeting::from_bytes((&buf, 0)).unwrap();
         debug!("Server greeting: {:?}", server_greeting);
-        info!("Read ServerGreeting");
+        info!("Done reading ServerGreeting");
         Ok(server_greeting)
     }
 
-    /// Reads from `TWAMP-Control` stream assuming the bytes to be received
-    /// will be of a `ServerStart`. Converts those bytes into a `ServerStart`
-    /// struct and returns it.
-    pub async fn read_server_start(&mut self) -> Result<ServerStart> {
-        let mut buf = [0; size_of::<ServerStart>()];
-        info!("Reading Server-Start");
-        self.stream.as_mut().unwrap().read(&mut buf).await?;
-        let (_rest, server_start) = ServerStart::from_bytes((&buf, 0)).unwrap();
-        debug!("Server-Start: {:?}", server_start);
-        info!("Read Server-Start");
-        Ok(server_start)
-    }
-
-    pub async fn read_start_ack(&mut self) -> Result<StartAck> {
-        let mut buf = [0; size_of::<StartAck>()];
-        info!("Reading Start-Ack");
-        self.stream.as_mut().unwrap().read(&mut buf).await?;
-        let (_rest, start_ack) = StartAck::from_bytes((&buf, 0)).unwrap();
-        debug!("Start-Ack: {:?}", start_ack);
-        info!("Read Start-Ack");
-        Ok(start_ack)
-    }
-
-    /// Creates a `SetUpResponse`, converts to bytes and sends it out on
-    /// `TWAMP-Control`.
+    /// Creates a `SetUpResponse`, converts to bytes and sends it out on `TWAMP-Control`.
     pub async fn send_set_up_response(&mut self) -> Result<()> {
-        info!("Preparing Set-Up-Response");
+        info!("Preparing to send Set-Up-Response");
         let set_up_response = SetUpResponse::new(Mode::Unauthenticated);
         debug!("Set-Up-Response: {:?}", set_up_response);
         let encoded = set_up_response.unwrap().to_bytes().unwrap();
@@ -120,10 +83,21 @@ impl ControlClient {
         Ok(())
     }
 
-    /// Creates a `Request-Tw-Session`, converts to bytes and sends it out on
-    /// `TWAMP-Control`.
+    /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
+    /// `ServerStart`. Converts those bytes into a `ServerStart` struct and returns it.
+    pub async fn read_server_start(&mut self) -> Result<ServerStart> {
+        let mut buf = [0; size_of::<ServerStart>()];
+        info!("Reading Server-Start");
+        self.stream.as_mut().unwrap().read(&mut buf).await?;
+        let (_rest, server_start) = ServerStart::from_bytes((&buf, 0)).unwrap();
+        debug!("Server-Start: {:?}", server_start);
+        info!("Done reading Server-Start");
+        Ok(server_start)
+    }
+
+    /// Creates a `Request-Tw-Session`, converts to bytes and sends it out on `TWAMP-Control`.
     pub async fn send_request_tw_session(&mut self) -> Result<()> {
-        info!("Preparing Request-TW-Session");
+        info!("Preparing to send Request-TW-Session");
         let stream = self.stream.as_ref().unwrap();
         let sender_address = match stream.local_addr().unwrap().ip() {
             IpAddr::V4(ip) => ip,
@@ -155,8 +129,22 @@ impl ControlClient {
         Ok(())
     }
 
+    /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
+    /// `AcceptSession`. Converts those bytes into a `AcceptSession` struct and returns it.
+    pub async fn read_accept_session(&mut self) -> Result<AcceptSession> {
+        let mut buf = [0; size_of::<AcceptSession>()];
+        info!("Reading Accept-Session");
+        self.stream.as_mut().unwrap().read(&mut buf).await?;
+        let (_rest, accept_session) = AcceptSession::from_bytes((&buf, 0)).unwrap();
+        debug!("Accept-Session: {:?}", accept_session);
+        info!("Read Accept-Session");
+
+        Ok(accept_session)
+    }
+
+    /// Creates a `Start-Sessions`, converts to bytes and sends it out on `TWAMP-Control`.
     pub async fn send_start_sessions(&mut self) -> Result<()> {
-        info!("Preparing Start-Sessions");
+        info!("Preparing to send Start-Sessions");
         let start_sessions = StartSessions::new();
         debug!("Start-Sessions: {:?}", start_sessions);
         let encoded = start_sessions.to_bytes().unwrap();
@@ -169,8 +157,21 @@ impl ControlClient {
         Ok(())
     }
 
+    /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
+    /// `Start-Ack`. Converts those bytes into a `Start-Ack` struct and returns it.
+    pub async fn read_start_ack(&mut self) -> Result<StartAck> {
+        let mut buf = [0; size_of::<StartAck>()];
+        info!("Reading Start-Ack");
+        self.stream.as_mut().unwrap().read(&mut buf).await?;
+        let (_rest, start_ack) = StartAck::from_bytes((&buf, 0)).unwrap();
+        debug!("Start-Ack: {:?}", start_ack);
+        info!("Done reading Start-Ack");
+        Ok(start_ack)
+    }
+
+    /// Creates a `Stop-Sessions`, converts to bytes and sends it out on `TWAMP-Control`.
     pub async fn send_stop_sessions(&mut self) -> Result<()> {
-        info!("Preparing Stop-Sessions");
+        info!("Preparing to send Stop-Sessions");
         let stop_sessions = StopSessions::new(Accept::Ok);
         debug!("Stop-Sessions: {:?}", stop_sessions);
         let encoded = stop_sessions.to_bytes().unwrap();

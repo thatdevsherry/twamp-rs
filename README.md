@@ -25,8 +25,12 @@ in rust.
 - [x] read server greeting
 - [x] send set-up-response
 - [x] read server-start
-- [ ] send request-tw-session
-... will add more once these work
+- [x] send request-tw-session
+- [x] read accept-session
+- [x] send start-sessions
+- [x] read start-ack
+- [ ] twamp-test
+- [x] send stop-sessions
 
 ### Responder
 
@@ -34,12 +38,9 @@ in rust.
 - [x] send server greeting
 - [x] read set-up-response
 - [x] send server-start
-- [ ] read request-tw-session
-... will add more once these work
-
-### TWAMP-Control (unauthenticated only)
-
-- [x] `ServerGreeting` as per RFC
-- [x] `SetUpResponse` as per RFC
-- [ ] `ServerStart` as per RFC
-... add more once these work
+- [x] read request-tw-session
+- [x] send accept-session
+- [x] read start-session
+- [x] send start-ack
+- [ ] twamp-test
+- [x] read stop-sessions

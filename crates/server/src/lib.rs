@@ -163,7 +163,7 @@ impl Server {
 
     /// Creates a `Start-Ack`, converts to bytes and sends it out on `TWAMP-Control`.
     pub async fn send_start_ack(&mut self) -> Result<StartAck> {
-        info!("Sending ServerGreeting");
+        info!("Sending Start-Ack");
         let start_ack = StartAck::new(Accept::Ok);
         debug!("Start-Ack: {:?}", start_ack);
         let encoded = start_ack.to_bytes().unwrap();

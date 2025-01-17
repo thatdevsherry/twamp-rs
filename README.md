@@ -9,6 +9,9 @@ in rust.
 
 # Run client
 > cargo run -p controller -- --server 127.0.0.1
+
+# Open docs in browser
+> cargo docs --workspace --no-deps --open
 ```
 
 ## Roadmap/Features

@@ -5,10 +5,10 @@ in rust.
 
 ```bash
 # Run server first.
-> RUST_LOG="debug" cargo watch -x "run"
+> cargo run -p responder
 
 # Run client
-> RUST_LOG="debug" cargo r -- --server 127.0.0.1
+> cargo run -p controller -- --server 127.0.0.1
 ```
 
 ## Roadmap/Features

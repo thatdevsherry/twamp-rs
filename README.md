@@ -3,6 +3,8 @@
 WIP TWAMP [RFC 5357](https://datatracker.ietf.org/doc/rfc5357/) implementation
 in rust.
 
+Currently building for unauthenticated mode only.
+
 ```bash
 # Run server first.
 > cargo run -p responder

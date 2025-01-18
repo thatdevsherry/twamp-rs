@@ -1,6 +1,9 @@
 use crate::constants::NTP_EPOCH;
 use deku::prelude::*;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{
+    fmt::Display,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 /// See [RFC 1305](https://datatracker.ietf.org/doc/html/rfc1305) for the format.
 #[derive(Clone, Copy, Debug, PartialEq, DekuRead, DekuWrite)]
@@ -26,6 +29,16 @@ impl TryFrom<Duration> for TimeStamp {
             integer_part_of_seconds: integer_part as u32,
             fractional_part_of_seconds: fractional_part,
         })
+    }
+}
+
+impl Display for TimeStamp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "integer, fractional: {}, {}",
+            self.integer_part_of_seconds, self.fractional_part_of_seconds
+        )
     }
 }
 

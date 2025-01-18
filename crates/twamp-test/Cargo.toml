@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 timestamp = { path = "../timestamp" }
 tracing = "0.1.40"
+deku = { workspace = true }

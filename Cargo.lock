@@ -839,6 +839,7 @@ version = "0.1.0"
 name = "twamp-test"
 version = "0.1.0"
 dependencies = [
+ "deku",
  "timestamp",
  "tracing",
 ]

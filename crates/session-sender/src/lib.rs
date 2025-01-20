@@ -45,9 +45,7 @@ impl SessionSender {
         Ok(())
     }
 
-    pub async fn recv(&self) -> () {
-        ()
-    }
+    pub async fn recv(&self) {}
 }
 
 #[cfg(test)]

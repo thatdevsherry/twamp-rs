@@ -4,9 +4,7 @@ use session_reflector::SessionReflector;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use tokio::select;
 use tokio::spawn;
-use tokio::sync::oneshot;
 use tokio::time::timeout;
 use tracing::*;
 use twamp_control::accept::Accept;
@@ -153,7 +151,7 @@ impl Server {
     /// `Set-Up-Response`. Converts those bytes into a `Set-Up-Response` struct and returns it.
     pub async fn read_set_up_response(&mut self, buf: &[u8]) -> Result<SetUpResponse> {
         info!("Reading Set-Up-Response");
-        let (_rest, set_up_response) = SetUpResponse::from_bytes((&buf, 0)).unwrap();
+        let (_rest, set_up_response) = SetUpResponse::from_bytes((buf, 0)).unwrap();
         debug!("Set-Up-Response: {:?}", set_up_response);
         info!("Read Set-Up-Response");
         Ok(set_up_response)
@@ -174,7 +172,7 @@ impl Server {
     /// `Request-TW-Session`. Converts those bytes into a `Request-TW-Session` struct and returns it.
     pub async fn read_request_tw_session(&mut self, buf: &[u8]) -> Result<RequestTwSession> {
         debug!("Reading Request-TW-Session");
-        let (_rest, request_tw_session) = RequestTwSession::from_bytes((&buf, 0)).unwrap();
+        let (_rest, request_tw_session) = RequestTwSession::from_bytes((buf, 0)).unwrap();
         debug!("Request-TW-Session: {:?}", request_tw_session);
         info!("Read Request-TW-Session");
         Ok(request_tw_session)
@@ -195,7 +193,7 @@ impl Server {
     /// `Start-Sessions`. Converts those bytes into a `Start-Sessions` struct and returns it.
     pub async fn read_start_sessions(&mut self, buf: &[u8]) -> Result<StartSessions> {
         debug!("Reading Start-Sessions");
-        let (_rest, start_sessions) = StartSessions::from_bytes((&buf, 0)).unwrap();
+        let (_rest, start_sessions) = StartSessions::from_bytes((buf, 0)).unwrap();
         debug!("Start-Sessions: {:?}", start_sessions);
         info!("Read Start-Sessions");
         Ok(start_sessions)

@@ -111,7 +111,7 @@ impl ServerGreeting {
     /// assert!(!server_greeting.has_mode(Mode::Reserved));
     /// ```
     pub fn has_mode(&self, mode: Mode) -> bool {
-        let greeting_mode: u32 = self.mode.into();
+        let greeting_mode: u32 = self.mode;
         let mode_as_number: u32 = mode.into();
         match mode {
             Mode::Reserved => greeting_mode | mode_as_number == mode_as_number,

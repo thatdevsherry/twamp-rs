@@ -25,6 +25,12 @@ impl StartSessions {
     }
 }
 
+impl Default for StartSessions {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::StartSessions;

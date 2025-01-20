@@ -72,7 +72,7 @@ pub struct RequestTwSession {
 
     /// From [RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357/#section-3.5):
     ///
-    /// > Timeout is the interval that the Session-Reflector MUST wait after receiving a
+    /// Timeout is the interval that the Session-Reflector MUST wait after receiving a
     /// Stop-Sessions message. In case there are test packets still in transit, the
     /// Session-Reflector MUST reflect them if they arrive within the Timeout interval following
     /// the reception of the Stop-Sessions message. The Session-Reflector MUST NOT reflect packets

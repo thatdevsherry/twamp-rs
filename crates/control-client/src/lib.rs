@@ -1,11 +1,9 @@
 use anyhow::Result;
 use deku::prelude::*;
 use session_sender::SessionSender;
-use tokio::time::sleep;
 use std::mem::size_of;
 use std::net::{IpAddr, Ipv4Addr, SocketAddrV4};
 use std::sync::Arc;
-use std::time::Duration;
 use timestamp::timestamp::TimeStamp;
 use tokio::net::TcpStream;
 use tokio::try_join;
@@ -55,14 +53,14 @@ impl ControlClient {
         self.server_greeting = Some(self.read_server_greeting().await?);
         self.send_set_up_response().await?;
         self.server_start = Some(self.read_server_start().await?);
-        let request_tw_session = Some(self.send_request_tw_session().await?);
+        let request_tw_session = self.send_request_tw_session().await?;
         self.read_accept_session().await?;
         self.send_start_sessions().await?;
         self.read_start_ack().await?;
         debug!("TODO: Impelement TWAMP-Test here.");
         debug!("Creating a new task to handle sending Twamp-Test pkts.");
         let session_sender =
-            Arc::new(SessionSender::from_request_tw_session(request_tw_session.unwrap()).await);
+            Arc::new(SessionSender::from_request_tw_session(request_tw_session).await);
         let session_sender_send = Arc::clone(&session_sender);
         let session_sender_recv = Arc::clone(&session_sender);
         let send_task = spawn(async move {
@@ -86,7 +84,7 @@ impl ControlClient {
     pub async fn read_server_greeting(&mut self) -> Result<ServerGreeting> {
         let mut buf = [0; size_of::<ServerGreeting>()];
         info!("Reading ServerGreeting");
-        self.stream.as_mut().unwrap().read(&mut buf).await?;
+        self.stream.as_mut().unwrap().read_exact(&mut buf).await?;
         let (_rest, server_greeting) = ServerGreeting::from_bytes((&buf, 0)).unwrap();
         debug!("Server greeting: {:?}", server_greeting);
         info!("Done reading ServerGreeting");
@@ -113,7 +111,7 @@ impl ControlClient {
     pub async fn read_server_start(&mut self) -> Result<ServerStart> {
         let mut buf = [0; size_of::<ServerStart>()];
         info!("Reading Server-Start");
-        self.stream.as_mut().unwrap().read(&mut buf).await?;
+        self.stream.as_mut().unwrap().read_exact(&mut buf).await?;
         let (_rest, server_start) = ServerStart::from_bytes((&buf, 0)).unwrap();
         debug!("Server-Start: {:?}", server_start);
         info!("Done reading Server-Start");
@@ -127,14 +125,12 @@ impl ControlClient {
         let sender_address = match stream.local_addr().unwrap().ip() {
             IpAddr::V4(ip) => ip,
             IpAddr::V6(ip) => panic!("da hail did v6 come from: {ip}"),
-        }
-        .into();
+        };
         let sender_port = stream.local_addr().unwrap().port();
         let receiver_address = match stream.peer_addr().unwrap().ip() {
             IpAddr::V4(ip) => ip,
             IpAddr::V6(ip) => panic!("da hail did v6 come from: {ip}"),
-        }
-        .into();
+        };
         let receiver_port = stream.peer_addr().unwrap().port();
         let request_tw_session = RequestTwSession::new(
             sender_address,
@@ -159,7 +155,7 @@ impl ControlClient {
     pub async fn read_accept_session(&mut self) -> Result<AcceptSession> {
         let mut buf = [0; size_of::<AcceptSession>()];
         info!("Reading Accept-Session");
-        self.stream.as_mut().unwrap().read(&mut buf).await?;
+        self.stream.as_mut().unwrap().read_exact(&mut buf).await?;
         let (_rest, accept_session) = AcceptSession::from_bytes((&buf, 0)).unwrap();
         debug!("Accept-Session: {:?}", accept_session);
         info!("Read Accept-Session");
@@ -187,7 +183,7 @@ impl ControlClient {
     pub async fn read_start_ack(&mut self) -> Result<StartAck> {
         let mut buf = [0; size_of::<StartAck>()];
         info!("Reading Start-Ack");
-        self.stream.as_mut().unwrap().read(&mut buf).await?;
+        self.stream.as_mut().unwrap().read_exact(&mut buf).await?;
         let (_rest, start_ack) = StartAck::from_bytes((&buf, 0)).unwrap();
         debug!("Start-Ack: {:?}", start_ack);
         info!("Done reading Start-Ack");

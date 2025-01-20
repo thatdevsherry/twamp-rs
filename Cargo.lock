@@ -180,6 +180,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "deku",
+ "session-sender",
  "timestamp",
  "tokio",
  "tracing",
@@ -592,6 +593,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "deku",
+ "session-reflector",
  "tokio",
  "tracing",
  "twamp-control",
@@ -601,14 +603,24 @@ dependencies = [
 name = "session-reflector"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "deku",
+ "tokio",
  "tracing",
+ "twamp-control",
+ "twamp-test",
 ]
 
 [[package]]
 name = "session-sender"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "clap",
+ "deku",
+ "tokio",
  "tracing",
+ "twamp-control",
  "twamp-test",
 ]
 

@@ -31,8 +31,11 @@ Currently building for unauthenticated mode only.
 - [x] read accept-session
 - [x] send start-sessions
 - [x] read start-ack
-- [ ] twamp-test
+- [x] twamp-test
 - [x] send stop-sessions
+- [ ] configurable twamp-test
+- [ ] configurable twamp-control
+- [ ] output for use in metrics (jitter, RTT etc)
 
 ### Responder
 
@@ -44,5 +47,7 @@ Currently building for unauthenticated mode only.
 - [x] send accept-session
 - [x] read start-session
 - [x] send start-ack
-- [ ] twamp-test
+- [x] twamp-test
 - [x] read stop-sessions
+- [ ] configurable twamp-test
+- [ ] configurable twamp-control

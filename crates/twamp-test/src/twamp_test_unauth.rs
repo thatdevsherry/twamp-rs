@@ -8,11 +8,11 @@ use crate::error_estimate::ErrorEstimate;
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]
 pub struct TwampTestPacketUnauth {
-    sequence_number: u32,
-    timestamp: TimeStamp,
-    error_estimate: ErrorEstimate,
+    pub sequence_number: u32,
+    pub timestamp: TimeStamp,
+    pub error_estimate: ErrorEstimate,
     #[deku(count = "27", assert = "packet_padding.len() <= 27")]
-    packet_padding: Vec<u8>,
+    pub packet_padding: Vec<u8>,
 }
 
 impl Display for TwampTestPacketUnauth {

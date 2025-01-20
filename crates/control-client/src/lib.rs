@@ -1,10 +1,18 @@
 use anyhow::Result;
 use deku::prelude::*;
+use session_sender::SessionSender;
+use tokio::time::sleep;
 use std::mem::size_of;
 use std::net::{IpAddr, Ipv4Addr, SocketAddrV4};
+use std::sync::Arc;
+use std::time::Duration;
 use timestamp::timestamp::TimeStamp;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
+use tokio::try_join;
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    spawn,
+};
 use tracing::*;
 use twamp_control::accept::Accept;
 use twamp_control::accept_session::AcceptSession;
@@ -47,11 +55,28 @@ impl ControlClient {
         self.server_greeting = Some(self.read_server_greeting().await?);
         self.send_set_up_response().await?;
         self.server_start = Some(self.read_server_start().await?);
-        self.send_request_tw_session().await?;
+        let request_tw_session = Some(self.send_request_tw_session().await?);
         self.read_accept_session().await?;
         self.send_start_sessions().await?;
         self.read_start_ack().await?;
         debug!("TODO: Impelement TWAMP-Test here.");
+        debug!("Creating a new task to handle sending Twamp-Test pkts.");
+        let session_sender =
+            Arc::new(SessionSender::from_request_tw_session(request_tw_session.unwrap()).await);
+        let session_sender_send = Arc::clone(&session_sender);
+        let session_sender_recv = Arc::clone(&session_sender);
+        let send_task = spawn(async move {
+            // TODO: Sending 1 packet for now. Make it dynamic later
+            let _ = session_sender_send.send_it(1).await;
+        });
+        let recv_task = spawn(async move {
+            let _ = session_sender_recv.recv().await;
+        });
+        // TODO: Add a timeout & stop-session logic so we don't infinitely listen for reflected
+        // pkts if the server dies or something.
+        //
+        // Right now we're just expecting recv to get all reflected pkts.
+        let _ = try_join!(send_task, recv_task).unwrap();
         self.send_stop_sessions().await?;
         Ok(())
     }
@@ -96,7 +121,7 @@ impl ControlClient {
     }
 
     /// Creates a `Request-Tw-Session`, converts to bytes and sends it out on `TWAMP-Control`.
-    pub async fn send_request_tw_session(&mut self) -> Result<()> {
+    pub async fn send_request_tw_session(&mut self) -> Result<RequestTwSession> {
         info!("Preparing to send Request-TW-Session");
         let stream = self.stream.as_ref().unwrap();
         let sender_address = match stream.local_addr().unwrap().ip() {
@@ -126,7 +151,7 @@ impl ControlClient {
             .write_all(&encoded[..])
             .await?;
         info!("Request-TW-Session sent");
-        Ok(())
+        Ok(request_tw_session)
     }
 
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a

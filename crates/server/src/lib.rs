@@ -1,8 +1,13 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use deku::prelude::*;
+use session_reflector::SessionReflector;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
+use tokio::select;
+use tokio::spawn;
+use tokio::sync::oneshot;
+use tokio::time::timeout;
 use tracing::*;
 use twamp_control::accept::Accept;
 use twamp_control::accept_session::AcceptSession;
@@ -66,31 +71,66 @@ impl Server {
         // reading/writing. Using a loop thingy here and testing
         // definitely-not-dry approach on client side.
         loop {
-            let mut buf = [0u8; 512];
-            let bytes_read = self.socket.read(&mut buf).await?;
-            debug!("bytes read: {}", bytes_read);
-
-            if bytes_read == 0 {
-                debug!("Control-Client closed connection");
-                break;
-            }
-
             match self.up_next() {
                 Messages::SetUpResponse => {
+                    let mut buf = [0u8; 512];
+                    let bytes_read = self.socket.read(&mut buf).await?;
+                    debug!("bytes read: {}", bytes_read);
+
+                    if bytes_read == 0 {
+                        debug!("Control-Client closed connection");
+                        break;
+                    }
                     self.set_up_response = Some(self.read_set_up_response(&buf).await?);
                     self.server_start = Some(self.send_server_start().await?);
                 }
                 Messages::RequestTwSession => {
+                    let mut buf = [0u8; 512];
+                    let bytes_read = self.socket.read(&mut buf).await?;
+                    debug!("bytes read: {}", bytes_read);
+
+                    if bytes_read == 0 {
+                        debug!("Control-Client closed connection");
+                        break;
+                    }
                     self.request_tw_session = Some(self.read_request_tw_session(&buf).await?);
                     self.accept_session = Some(self.send_accept_session().await?);
                 }
                 Messages::StartSessions => {
+                    let mut buf = [0u8; 512];
+                    let bytes_read = self.socket.read(&mut buf).await?;
+                    debug!("bytes read: {}", bytes_read);
+
+                    if bytes_read == 0 {
+                        debug!("Control-Client closed connection");
+                        break;
+                    }
                     self.start_sessions = Some(self.read_start_sessions(&buf).await?);
                     self.start_ack = Some(self.send_start_ack().await?);
                 }
                 Messages::StopSessions => {
-                    debug!("TODO: Impelement TWAMP-Test.");
-                    self.stop_sessions = Some(self.read_stop_sessions(&buf).await?);
+                    info!("Reading TWAMP-Test & Stop-Sessions");
+                    // NOTE: Ignoring REFWAIT and handling timeout & stop-session only for now.
+                    let request_tw_session = self.request_tw_session.to_owned().unwrap();
+                    let session_reflector_task = spawn(async {
+                        let session_reflector =
+                            SessionReflector::from_request_tw_session(request_tw_session).await;
+                        session_reflector.do_reflect().await;
+                    });
+                    let read_timeout =
+                        timeout(Duration::from_secs(5), self.read_stop_sessions()).await;
+                    match read_timeout {
+                        Ok(_) => {
+                            debug!("Stop-Session received. Close shop.");
+                            session_reflector_task.abort();
+                            return Ok(());
+                        }
+                        Err(_) => {
+                            debug!("Timeout reached. Destroy shop.");
+                            session_reflector_task.abort();
+                            return Err(anyhow!("Timeout reached."));
+                        }
+                    }
                 }
             }
         }
@@ -174,7 +214,15 @@ impl Server {
 
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
     /// `Stop-Sessions`. Converts those bytes into a `Stop-Sessions` struct and returns it.
-    pub async fn read_stop_sessions(&mut self, buf: &[u8]) -> Result<StopSessions> {
+    pub async fn read_stop_sessions(&mut self) -> Result<StopSessions> {
+        let mut buf = [0u8; 512];
+        let bytes_read = self.socket.read(&mut buf).await.unwrap();
+        debug!("bytes read: {}", bytes_read);
+
+        if bytes_read == 0 {
+            debug!("Control-Client closed connection");
+            return Err(anyhow!("Connection closed w/o Stop-Session"));
+        }
         debug!("Reading Stop-Sessions");
         let (_rest, stop_sessions) = StopSessions::from_bytes((&buf, 0)).unwrap();
         debug!("Stop-Sessions: {:?}", stop_sessions);

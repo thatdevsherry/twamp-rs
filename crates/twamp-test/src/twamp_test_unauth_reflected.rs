@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
+use crate::{error_estimate::ErrorEstimate, twamp_test_unauth::TwampTestPacketUnauth};
 use deku::prelude::*;
 use timestamp::timestamp::TimeStamp;
-use crate::error_estimate::ErrorEstimate;
 
 /// The packet sent by Session-Reflector to Session-Sender.
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
@@ -34,4 +34,20 @@ impl Display for TwampTestPacketUnauthReflected {
     }
 }
 
-impl TwampTestPacketUnauthReflected {}
+impl TwampTestPacketUnauthReflected {
+    pub fn new(seq: u32, twamp_test_pkt: TwampTestPacketUnauth, recv_ts: TimeStamp) -> Self {
+        TwampTestPacketUnauthReflected {
+            sequence_number: seq,
+            timestamp: TimeStamp::default(),
+            error_estimate: ErrorEstimate::new(true),
+            mbz_first: 0,
+            receive_timestamp: recv_ts,
+            sender_sequence_number: twamp_test_pkt.sequence_number,
+            sender_timestamp: twamp_test_pkt.timestamp,
+            error_estimate_sender: twamp_test_pkt.error_estimate,
+            mbz_second: 0,
+            sender_ttl: 255, // TODO: hard-coded
+            packet_padding: vec![0; 0],
+        }
+    }
+}

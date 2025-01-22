@@ -1,20 +1,14 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use deku::prelude::*;
-use session_sender::SessionSender;
 use std::mem::size_of;
-use std::net::{IpAddr, Ipv4Addr, SocketAddrV4};
-use std::sync::Arc;
+use std::net::IpAddr;
 use timestamp::timestamp::TimeStamp;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use tokio::try_join;
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    spawn,
-};
+use tokio::sync::oneshot;
 use tracing::*;
 use twamp_control::accept::Accept;
 use twamp_control::accept_session::AcceptSession;
-use twamp_control::constants::TWAMP_CONTROL_WELL_KNOWN_PORT;
 use twamp_control::request_tw_session::RequestTwSession;
 use twamp_control::security_mode::Mode;
 use twamp_control::server_greeting::ServerGreeting;
@@ -35,46 +29,49 @@ use twamp_control::stop_sessions::StopSessions;
 pub struct ControlClient {
     /// TCP stream on which TWAMP-Control is being used.
     pub stream: Option<TcpStream>,
-
-    /// [Server Greeting](ServerGreeting) received from Server.
-    pub server_greeting: Option<ServerGreeting>,
-
-    /// [Server-Start](ServerStart) received from Server.
-    pub server_start: Option<ServerStart>,
 }
 
 impl ControlClient {
+    pub fn new() -> Self {
+        Self { stream: None }
+    }
     /// Initiates TCP connection and starts the [TWAMP-Control](twamp_control) protocol with
     /// Server, handling communication until the test ends or connection is killed/stopped.
-    pub async fn connect(&mut self, server_addr: Ipv4Addr) -> Result<()> {
-        let socket_addr = SocketAddrV4::new(server_addr, TWAMP_CONTROL_WELL_KNOWN_PORT);
-        let stream = TcpStream::connect(socket_addr).await?;
-        self.stream = Some(stream);
-        self.server_greeting = Some(self.read_server_greeting().await?);
+    pub async fn do_twamp_control(
+        &mut self,
+        twamp_control: TcpStream,
+        start_session_tx: oneshot::Sender<()>,
+        reflector_port_tx: oneshot::Sender<u16>,
+        responder_reflect_port: u16,
+        controller_port: u16,
+        timeout_tx: oneshot::Sender<u64>,
+        twamp_test_complete_rx: oneshot::Receiver<()>,
+    ) -> Result<()> {
+        self.stream = Some(twamp_control);
+        self.read_server_greeting().await?;
         self.send_set_up_response().await?;
-        self.server_start = Some(self.read_server_start().await?);
-        let request_tw_session = self.send_request_tw_session().await?;
-        self.read_accept_session().await?;
+        self.read_server_start().await?;
+        let request_tw_session = self
+            .send_request_tw_session(responder_reflect_port, controller_port)
+            .await?;
+        let accept_session = self.read_accept_session().await?;
+        if accept_session.accept != Accept::Ok {
+            return Err(anyhow!("Did not receive Ok in Accept-Session"));
+        };
+
+        debug!("Responder provided port: {}", accept_session.port);
+        reflector_port_tx.send(accept_session.port).unwrap();
+        timeout_tx.send(request_tw_session.timeout).unwrap();
         self.send_start_sessions().await?;
-        self.read_start_ack().await?;
-        debug!("TODO: Impelement TWAMP-Test here.");
-        debug!("Creating a new task to handle sending Twamp-Test pkts.");
-        let session_sender =
-            Arc::new(SessionSender::from_request_tw_session(request_tw_session).await);
-        let session_sender_send = Arc::clone(&session_sender);
-        let session_sender_recv = Arc::clone(&session_sender);
-        let send_task = spawn(async move {
-            // TODO: Sending 1 packet for now. Make it dynamic later
-            let _ = session_sender_send.send_it(1).await;
-        });
-        let recv_task = spawn(async move {
-            let _ = session_sender_recv.recv().await;
-        });
-        // TODO: Add a timeout & stop-session logic so we don't infinitely listen for reflected
-        // pkts if the server dies or something.
-        //
-        // Right now we're just expecting recv to get all reflected pkts.
-        let _ = try_join!(send_task, recv_task).unwrap();
+        let start_ack = self.read_start_ack().await?;
+        if start_ack.accept != Accept::Ok {
+            return Err(anyhow!("Start-Ack should be zero"));
+        }
+        start_session_tx.send(()).unwrap();
+        // testing
+        debug!("Waiting for Session-Sender to complete, Control-Client will then send Stop-Sessions.");
+        let _ = twamp_test_complete_rx.await;
+        debug!("Received confirmation that TWAMP-Test is complete. Sending Stop-Sessions");
         self.send_stop_sessions().await?;
         Ok(())
     }
@@ -119,24 +116,30 @@ impl ControlClient {
     }
 
     /// Creates a `Request-Tw-Session`, converts to bytes and sends it out on `TWAMP-Control`.
-    pub async fn send_request_tw_session(&mut self) -> Result<RequestTwSession> {
+    pub async fn send_request_tw_session(
+        &mut self,
+        session_reflector_port: u16,
+        controller_port: u16,
+    ) -> Result<RequestTwSession> {
         info!("Preparing to send Request-TW-Session");
         let stream = self.stream.as_ref().unwrap();
         let sender_address = match stream.local_addr().unwrap().ip() {
             IpAddr::V4(ip) => ip,
             IpAddr::V6(ip) => panic!("da hail did v6 come from: {ip}"),
         };
-        let sender_port = stream.local_addr().unwrap().port();
         let receiver_address = match stream.peer_addr().unwrap().ip() {
             IpAddr::V4(ip) => ip,
             IpAddr::V6(ip) => panic!("da hail did v6 come from: {ip}"),
         };
-        let receiver_port = stream.peer_addr().unwrap().port();
+        debug!(
+            "Request-TW-Session reflector port: {}",
+            session_reflector_port
+        );
         let request_tw_session = RequestTwSession::new(
             sender_address,
-            sender_port,
+            controller_port,
             receiver_address,
-            receiver_port,
+            session_reflector_port,
             TimeStamp::default(),
         );
         debug!("request-tw-session: {:?}", request_tw_session);
@@ -209,10 +212,6 @@ impl ControlClient {
 impl Default for ControlClient {
     /// Construct an empty `ControlClient` with no context.
     fn default() -> Self {
-        ControlClient {
-            stream: None,
-            server_greeting: None,
-            server_start: None,
-        }
+        ControlClient { stream: None }
     }
 }

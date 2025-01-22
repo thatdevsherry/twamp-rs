@@ -17,6 +17,9 @@ use twamp_control::constants::TWAMP_CONTROL_WELL_KNOWN_PORT;
 struct Args {
     #[arg(short, long, default_value = "127.0.0.1")]
     addr: Ipv4Addr,
+
+    #[arg(short, long, default_value_t = TWAMP_CONTROL_WELL_KNOWN_PORT)]
+    port: u16,
 }
 
 async fn handle_client(socket: TcpStream) {
@@ -27,13 +30,14 @@ async fn handle_client(socket: TcpStream) {
 
 async fn try_main() -> Result<()> {
     let args = Args::parse();
-    let socket_addr = SocketAddrV4::new(args.addr, TWAMP_CONTROL_WELL_KNOWN_PORT);
+    let socket_addr = SocketAddrV4::new(args.addr, args.port);
     // listen for clients, then open up tokio task for each one.
     debug!("Attempting to bind to: {}", socket_addr);
 
     let listener = TcpListener::bind(socket_addr).await?;
     debug!("Successfully binded to: {}", listener.local_addr()?);
 
+    info!("Listening TWAMP-Control on: {}/tcp", listener.local_addr()?);
     loop {
         let (socket, client_addr) = listener.accept().await?;
         info!("Received connection from {}", client_addr);

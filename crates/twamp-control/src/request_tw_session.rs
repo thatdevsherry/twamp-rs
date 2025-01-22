@@ -119,7 +119,7 @@ impl RequestTwSession {
             sid: 0, // Must be zero.
             padding_length: 0,
             start_time,
-            timeout: 0,
+            timeout: 900,
             type_p_descriptor: 0,
             octets_to_be_reflected: 0,
             length_of_padding_to_reflect: 0,

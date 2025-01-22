@@ -181,7 +181,12 @@ impl Server {
     /// Creates a `Accept-Session`, converts to bytes and sends it out on `TWAMP-Control`.
     pub async fn send_accept_session(&mut self) -> Result<AcceptSession> {
         info!("Sending Accept-Session");
-        let accept_session = AcceptSession::new(Accept::Ok, 0, 0, 0);
+        let accept_session = AcceptSession::new(
+            Accept::Ok,
+            self.request_tw_session.as_ref().unwrap().receiver_port,
+            0,
+            0,
+        );
         debug!("Accept-Session: {:?}", accept_session);
         let encoded = accept_session.to_bytes().unwrap();
         self.socket.write_all(&encoded[..]).await?;

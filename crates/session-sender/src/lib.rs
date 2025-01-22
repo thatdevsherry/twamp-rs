@@ -1,35 +1,24 @@
 use anyhow::Result;
 use deku::prelude::*;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4};
-use tokio::net::UdpSocket;
+use std::{
+    net::{SocketAddr, SocketAddrV4},
+    sync::Arc,
+};
+use tokio::{net::UdpSocket, spawn};
 use tracing::*;
-use twamp_control::request_tw_session::RequestTwSession;
 use twamp_test::twamp_test_unauth::TwampTestPacketUnauth;
 
 #[derive(Debug)]
 pub struct SessionSender {
-    pub socket: UdpSocket,
+    pub socket: Arc<UdpSocket>,
     pub dest: SocketAddr,
 }
 
 impl SessionSender {
-    /// Sets up Session-Sender from a Request-TW-Session.
-    pub async fn from_request_tw_session(value: RequestTwSession) -> Self {
-        let socket_addr = SocketAddrV4::new(
-            if value.sender_address == Ipv4Addr::UNSPECIFIED {
-                Ipv4Addr::UNSPECIFIED
-            } else {
-                value.sender_address
-            },
-            value.sender_port,
-        );
-        let udp_socket = UdpSocket::bind(socket_addr).await.unwrap();
-        let dest = SocketAddr::new(IpAddr::V4(value.receiver_address), value.receiver_port);
-        udp_socket.connect(dest).await.unwrap();
-        debug!("Binded to {}/udp", socket_addr);
+    pub async fn new(socket: Arc<UdpSocket>, dest: SocketAddrV4) -> Self {
         Self {
-            socket: udp_socket,
-            dest: SocketAddr::new(IpAddr::V4(value.receiver_address), value.receiver_port),
+            socket,
+            dest: SocketAddr::V4(dest),
         }
     }
 
@@ -39,13 +28,31 @@ impl SessionSender {
             let twamp_test = TwampTestPacketUnauth::new(i, 0, true);
             debug!("Twamp-Test: {:?}", twamp_test);
             let encoded = twamp_test.to_bytes().unwrap();
-            self.socket.send(&encoded[..]).await?;
-            info!("Twamp-Test sent");
+            let l = self.socket.local_addr().unwrap();
+            let p = self.socket.peer_addr().unwrap();
+            debug!("Sending pkt from {} to {}", l, p);
+            let len = self.socket.send(&encoded[..]).await?;
+            info!("Twamp-Test sent of bytes: {}", len);
         }
         Ok(())
     }
 
-    pub async fn recv(&self) {}
+    pub async fn recv(&self, number_of_packets: u32) {
+        let sock_clone = Arc::clone(&self.socket);
+        let reflect_task = spawn(async move {
+            let mut count: u32 = 1;
+            loop {
+                let mut buf = [0u8; 1024]; // Buffer to hold incoming packets
+                let _ = sock_clone.recv(&mut buf).await.unwrap();
+                debug!("Received reflected bytes: {}", buf.len());
+                if count == number_of_packets {
+                    break;
+                }
+                count += 1;
+            }
+        });
+        reflect_task.await.unwrap()
+    }
 }
 
 #[cfg(test)]

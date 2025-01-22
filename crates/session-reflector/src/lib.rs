@@ -1,10 +1,17 @@
-use std::net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4};
+use std::{
+    net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4},
+    sync::Arc,
+};
 
 use deku::prelude::*;
-use tokio::net::UdpSocket;
+use timestamp::timestamp::TimeStamp;
+use tokio::{net::UdpSocket, spawn};
 use tracing::*;
 use twamp_control::request_tw_session::RequestTwSession;
-use twamp_test::twamp_test_unauth::TwampTestPacketUnauth;
+use twamp_test::{
+    twamp_test_unauth::TwampTestPacketUnauth,
+    twamp_test_unauth_reflected::TwampTestPacketUnauthReflected,
+};
 
 #[derive(Debug)]
 pub struct SessionReflector {
@@ -36,16 +43,34 @@ impl SessionReflector {
     }
 
     /// Starts reflecting TWAMP-Test packets indefinitely.
-    pub async fn do_reflect(&self) {
+    pub async fn do_reflect(self) {
+        let l = self.socket.local_addr().unwrap();
+        let p = self.socket.peer_addr().unwrap();
+        let sock = Arc::new(self.socket);
+        debug!("Listening for pkts from {} on {}", p, l);
+        let mut seq: u32 = 0;
         loop {
-            let mut buf = [0u8; 1500]; // 1500 for max MTU. Even though we aren't setting padding
+            let sock_clone = Arc::clone(&sock);
+            let mut buf = [0u8; 1472]; // 1472 for max MTU. Even though we aren't setting padding
                                        // above 27. Still setting this big for now.
-            let bytes_read = self.socket.recv(&mut buf).await.unwrap();
+            let bytes_read = sock_clone.recv(&mut buf).await.unwrap();
+            let recv_timestamp = TimeStamp::default();
             debug!("bytes read: {}", bytes_read);
             let (_rest, twamp_test_unauth) = TwampTestPacketUnauth::from_bytes((&buf, 0)).unwrap();
             debug!("Twamp-Test: {:?}", twamp_test_unauth);
-            debug!("Read Twamp-Test with seq: {}", twamp_test_unauth.sequence_number);
-            debug!("TODO: Reflect");
+            debug!(
+                "Read Twamp-Test with seq: {}",
+                twamp_test_unauth.sequence_number
+            );
+            // spawn task so we still read
+            spawn(async move {
+                let pkt = twamp_test_unauth;
+                let pkt_reflected = TwampTestPacketUnauthReflected::new(seq, pkt, recv_timestamp);
+                let encoded = pkt_reflected.to_bytes().unwrap();
+                let len = sock_clone.send(&encoded[..]).await.unwrap();
+                debug!("Sent reflected pkt of bytes: {}", len);
+            });
+            seq += 1;
         }
     }
 }

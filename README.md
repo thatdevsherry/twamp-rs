@@ -7,16 +7,21 @@ Currently building for unauthenticated mode only.
 
 ```bash
 # Run server first.
-> cargo run -p responder
+> cargo run -p responder -- -p 4000 # defaults to 862 which needs permissions
 
 # Run client
-> cargo run -p controller -- --server 127.0.0.1
+> cargo run -p controller -- \
+--responder-addr 127.0.0.1 \
+--responder-port 4000 \
+--controller-addr 127.0.0.1 \
+--responder-reflect-port 4001 \
+--number-of-test-packets 1 \
 
 # Tests
 > cargo test --workspace
 
 # Open docs in browser
-> cargo docs --workspace --no-deps --open
+> cargo doc --workspace --no-deps --open
 ```
 
 ## Roadmap/Features

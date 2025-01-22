@@ -199,6 +199,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "twamp-control",
+ "twamp-test",
 ]
 
 [[package]]
@@ -605,6 +606,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "deku",
+ "timestamp",
  "tokio",
  "tracing",
  "twamp-control",

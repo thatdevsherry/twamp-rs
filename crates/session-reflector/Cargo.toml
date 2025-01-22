@@ -9,6 +9,7 @@ edition = "2021"
 tracing = "0.1.40"
 twamp-test = { path = "../twamp-test" }
 twamp-control = { path = "../twamp-control" }
+timestamp = { path = "../timestamp" }
 deku = { workspace = true }
 tokio = { version = "1", features = ["full"] }
 anyhow = "1.0.81"

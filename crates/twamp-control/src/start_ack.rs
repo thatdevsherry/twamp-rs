@@ -8,7 +8,7 @@ use deku::prelude::*;
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]
 pub struct StartAck {
-    accept: Accept,
+    pub accept: Accept,
     #[deku(assert_eq = "[0u8; 15]")]
     mbz: [u8; 15],
     hmac: [u8; 16],

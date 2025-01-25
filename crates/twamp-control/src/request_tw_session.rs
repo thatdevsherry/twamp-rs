@@ -344,7 +344,7 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            None,
+            Some(timestamp),
             900,
         );
         assert_eq!(request_tw_session.start_time, timestamp);

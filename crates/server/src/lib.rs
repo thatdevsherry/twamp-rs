@@ -1,11 +1,9 @@
 use anyhow::{anyhow, Result};
 use deku::prelude::*;
-use session_reflector::SessionReflector;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use tokio::spawn;
-use tokio::time::timeout;
+use tokio::sync::oneshot;
 use tracing::*;
 use twamp_control::accept::Accept;
 use twamp_control::accept_session::AcceptSession;
@@ -30,7 +28,6 @@ pub struct Server {
     accept_session: Option<AcceptSession>,
     start_sessions: Option<StartSessions>,
     start_ack: Option<StartAck>,
-    stop_sessions: Option<StopSessions>,
 }
 
 impl Server {
@@ -58,16 +55,26 @@ impl Server {
             accept_session: None,
             start_sessions: None,
             start_ack: None,
-            stop_sessions: None,
         }
     }
 
-    pub async fn handle_control_client(&mut self) -> Result<()> {
+    pub async fn handle_control_client(
+        &mut self,
+        req_tw_tx: oneshot::Sender<RequestTwSession>,
+        ref_port_rx: oneshot::Receiver<u16>,
+        start_ack_tx: oneshot::Sender<()>,
+        stop_session_tx: oneshot::Sender<()>,
+        timeout_tx: oneshot::Sender<u64>,
+    ) -> Result<()> {
         self.server_greeting = Some(self.send_server_greeting().await?);
 
-        // Testing out what is a good way to write code for
-        // reading/writing. Using a loop thingy here and testing
-        // definitely-not-dry approach on client side.
+        // Wrap `oneshot::Sender` in an Option to make rust happy by knowing we won't access
+        // Sender after one use, which is moved in next iteration of loop.
+        let mut ref_req_port_tx_opt = Some(req_tw_tx);
+        let mut ref_port_rx_opt = Some(ref_port_rx);
+        let mut start_ack_tx_opt = Some(start_ack_tx);
+        let mut stop_session_tx_opt = Some(stop_session_tx);
+        let mut timeout_tx_opt = Some(timeout_tx);
         loop {
             match self.up_next() {
                 Messages::SetUpResponse => {
@@ -92,7 +99,20 @@ impl Server {
                         break;
                     }
                     self.request_tw_session = Some(self.read_request_tw_session(&buf).await?);
-                    self.accept_session = Some(self.send_accept_session().await?);
+                    if let Some(sender) = ref_req_port_tx_opt.take() {
+                        sender
+                            .send(self.request_tw_session.to_owned().unwrap())
+                            .unwrap();
+                    };
+                    if let Some(final_port) = ref_port_rx_opt.take() {
+                        let final_port = final_port.await.unwrap();
+                        self.accept_session = Some(self.send_accept_session(final_port).await?);
+                    }
+                    if let Some(timeout) = timeout_tx_opt.take() {
+                        timeout
+                            .send(self.request_tw_session.to_owned().unwrap().timeout)
+                            .unwrap();
+                    }
                 }
                 Messages::StartSessions => {
                     let mut buf = [0u8; 512];
@@ -105,30 +125,17 @@ impl Server {
                     }
                     self.start_sessions = Some(self.read_start_sessions(&buf).await?);
                     self.start_ack = Some(self.send_start_ack().await?);
+                    if let Some(start_ack_tx_val) = start_ack_tx_opt.take() {
+                        start_ack_tx_val.send(()).unwrap();
+                    }
                 }
                 Messages::StopSessions => {
-                    info!("Reading TWAMP-Test & Stop-Sessions");
-                    // NOTE: Ignoring REFWAIT and handling timeout & stop-session only for now.
-                    let request_tw_session = self.request_tw_session.to_owned().unwrap();
-                    let session_reflector_task = spawn(async {
-                        let session_reflector =
-                            SessionReflector::from_request_tw_session(request_tw_session).await;
-                        session_reflector.do_reflect().await;
-                    });
-                    let read_timeout =
-                        timeout(Duration::from_secs(5), self.read_stop_sessions()).await;
-                    match read_timeout {
-                        Ok(_) => {
-                            debug!("Stop-Session received. Close shop.");
-                            session_reflector_task.abort();
-                            return Ok(());
-                        }
-                        Err(_) => {
-                            debug!("Timeout reached. Destroy shop.");
-                            session_reflector_task.abort();
-                            return Err(anyhow!("Timeout reached."));
-                        }
+                    info!("Reading Stop-Sessions");
+                    self.read_stop_sessions().await.unwrap();
+                    if let Some(stop_session_tx_val) = stop_session_tx_opt.take() {
+                        stop_session_tx_val.send(()).unwrap();
                     }
+                    break;
                 }
             }
         }
@@ -179,14 +186,9 @@ impl Server {
     }
 
     /// Creates a `Accept-Session`, converts to bytes and sends it out on `TWAMP-Control`.
-    pub async fn send_accept_session(&mut self) -> Result<AcceptSession> {
+    pub async fn send_accept_session(&mut self, receiver_port: u16) -> Result<AcceptSession> {
         info!("Sending Accept-Session");
-        let accept_session = AcceptSession::new(
-            Accept::Ok,
-            self.request_tw_session.as_ref().unwrap().receiver_port,
-            0,
-            0,
-        );
+        let accept_session = AcceptSession::new(Accept::Ok, receiver_port, 0, 0);
         debug!("Accept-Session: {:?}", accept_session);
         let encoded = accept_session.to_bytes().unwrap();
         self.socket.write_all(&encoded[..]).await?;

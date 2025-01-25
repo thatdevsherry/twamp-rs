@@ -100,7 +100,8 @@ impl RequestTwSession {
         sender_port: u16,
         receiver_address: Ipv4Addr,
         receiver_port: u16,
-        start_time: TimeStamp,
+        start_time: Option<TimeStamp>,
+        timeout: u64,
     ) -> Self {
         RequestTwSession {
             command_number: CommandNumber::RequestTwSession,
@@ -118,8 +119,8 @@ impl RequestTwSession {
             receiver_address_cont: [0; 12],
             sid: 0, // Must be zero.
             padding_length: 0,
-            start_time,
-            timeout: 900,
+            start_time: start_time.unwrap_or_default(),
+            timeout,
             type_p_descriptor: 0,
             octets_to_be_reflected: 0,
             length_of_padding_to_reflect: 0,
@@ -142,7 +143,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(
             request_tw_session.command_number,
@@ -157,7 +159,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(request_tw_session.mbz_first, 0u8);
     }
@@ -170,7 +173,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(request_tw_session.ipvn, 4u8);
     }
@@ -182,7 +186,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(request_tw_session.conf_sender, 0u8);
     }
@@ -194,7 +199,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(request_tw_session.conf_receiver, 0u8);
     }
@@ -206,7 +212,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(request_tw_session.number_of_schedule_slots, 0u32);
     }
@@ -218,7 +225,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(request_tw_session.number_of_packets, 0u32);
     }
@@ -230,7 +238,8 @@ mod tests {
             12345,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(request_tw_session.sender_port, 12345);
     }
@@ -242,7 +251,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             12345,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(request_tw_session.receiver_port, 12345);
     }
@@ -254,7 +264,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(
             request_tw_session.sender_address,
@@ -270,7 +281,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(request_tw_session.sender_address_cont, [0; 12]);
     }
@@ -282,7 +294,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(
             request_tw_session.receiver_address,
@@ -298,7 +311,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(request_tw_session.receiver_address_cont, [0; 12]);
     }
@@ -310,7 +324,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(request_tw_session.sid, 0);
     }
@@ -329,7 +344,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            timestamp,
+            None,
+            900,
         );
         assert_eq!(request_tw_session.start_time, timestamp);
     }
@@ -365,7 +381,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         assert_eq!(request_tw_session.mbz_last, 0);
     }
@@ -383,7 +400,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         let encoded = request_tw_session.to_bytes().unwrap();
         assert_eq!(encoded.len(), REQUEST_TW_SESSION_LENGTH_IN_BYTES)
@@ -396,7 +414,8 @@ mod tests {
             0,
             Ipv4Addr::new(127, 0, 0, 1),
             0,
-            TimeStamp::default(),
+            None,
+            900,
         );
         let encoded = request_tw_session.to_bytes().unwrap();
         let (_rest, val) = RequestTwSession::from_bytes((&encoded, 0)).unwrap();

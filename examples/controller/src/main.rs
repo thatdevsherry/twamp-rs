@@ -1,6 +1,6 @@
 pub mod controller;
 
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::net::Ipv4Addr;
 use std::process;
 
 use anyhow::Result;
@@ -46,13 +46,19 @@ struct Args {
         help = "Number of TWAMP-Test packets to reflect."
     )]
     number_of_test_packets: u32,
+
+    #[arg(
+        long,
+        default_value = "900",
+        help = "Timeout (seconds) used in Request-TW-Session."
+    )]
+    timeout: u64,
 }
 
 async fn try_main() -> Result<()> {
     let args = Args::parse();
     let controller = Controller::new();
     info!("Controller initialized");
-    let responder_tcp = SocketAddrV4::new(args.responder_addr, args.responder_port);
 
     controller
         .do_twamp(
@@ -62,6 +68,7 @@ async fn try_main() -> Result<()> {
             args.controller_test_port,
             args.responder_reflect_port,
             args.number_of_test_packets,
+            args.timeout,
         )
         .await?;
     Ok(())

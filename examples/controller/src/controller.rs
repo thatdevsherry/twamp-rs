@@ -40,6 +40,7 @@ impl Controller {
         mut controller_port: u16,
         responder_reflect_port: u16,
         number_of_test_packets: u32,
+        reflector_timeout: u64,
     ) -> Result<()> {
         let twamp_control =
             TcpStream::connect(SocketAddrV4::new(responder_addr, responder_port)).await?;
@@ -50,7 +51,6 @@ impl Controller {
         let (start_session_tx, start_session_rx) = oneshot::channel::<()>();
         let (twamp_test_complete_tx, twamp_test_complete_rx) = oneshot::channel::<()>();
         let (reflector_port_tx, reflector_port_rx) = oneshot::channel::<u16>();
-        let (timeout_tx, timeout_rx) = oneshot::channel::<u64>();
         let control_client_handle = spawn(async move {
             self.control_client
                 .do_twamp_control(
@@ -59,7 +59,7 @@ impl Controller {
                     reflector_port_tx,
                     responder_reflect_port,
                     controller_port,
-                    timeout_tx,
+                    reflector_timeout,
                     twamp_test_complete_rx,
                 )
                 .await
@@ -69,7 +69,6 @@ impl Controller {
             // Wait until we get the Accept-Session's port.
             let final_port = reflector_port_rx.await.unwrap();
             debug!("Received reflector port: {}", final_port);
-            let _reflector_timeout = timeout_rx.await.unwrap();
             udp_socket
                 .connect(SocketAddrV4::new(responder_addr, final_port))
                 .await

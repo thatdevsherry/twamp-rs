@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
+use crate::error_estimate::ErrorEstimate;
 use deku::prelude::*;
 use timestamp::timestamp::TimeStamp;
-use crate::error_estimate::ErrorEstimate;
 
 /// The packet sent by Session-Sender to Session-Reflector.
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
@@ -90,5 +90,4 @@ mod tests {
             TwampTestPacketUnauth::MAX_PADDING_LENGTH.into()
         );
     }
-
 }

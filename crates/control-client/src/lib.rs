@@ -2,7 +2,6 @@ use anyhow::{anyhow, Result};
 use deku::prelude::*;
 use std::mem::size_of;
 use std::net::IpAddr;
-use timestamp::timestamp::TimeStamp;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::sync::oneshot;
@@ -44,15 +43,14 @@ impl ControlClient {
         reflector_port_tx: oneshot::Sender<u16>,
         responder_reflect_port: u16,
         controller_port: u16,
-        timeout_tx: oneshot::Sender<u64>,
+        reflector_timeout: u64,
         twamp_test_complete_rx: oneshot::Receiver<()>,
     ) -> Result<()> {
         self.stream = Some(twamp_control);
         self.read_server_greeting().await?;
         self.send_set_up_response().await?;
         self.read_server_start().await?;
-        let request_tw_session = self
-            .send_request_tw_session(responder_reflect_port, controller_port)
+        self.send_request_tw_session(responder_reflect_port, controller_port, reflector_timeout)
             .await?;
         let accept_session = self.read_accept_session().await?;
         if accept_session.accept != Accept::Ok {
@@ -61,7 +59,6 @@ impl ControlClient {
 
         debug!("Responder provided port: {}", accept_session.port);
         reflector_port_tx.send(accept_session.port).unwrap();
-        timeout_tx.send(request_tw_session.timeout).unwrap();
         self.send_start_sessions().await?;
         let start_ack = self.read_start_ack().await?;
         if start_ack.accept != Accept::Ok {
@@ -69,7 +66,9 @@ impl ControlClient {
         }
         start_session_tx.send(()).unwrap();
         // testing
-        debug!("Waiting for Session-Sender to complete, Control-Client will then send Stop-Sessions.");
+        debug!(
+            "Waiting for Session-Sender to complete, Control-Client will then send Stop-Sessions."
+        );
         let _ = twamp_test_complete_rx.await;
         debug!("Received confirmation that TWAMP-Test is complete. Sending Stop-Sessions");
         self.send_stop_sessions().await?;
@@ -120,6 +119,7 @@ impl ControlClient {
         &mut self,
         session_reflector_port: u16,
         controller_port: u16,
+        timeout: u64,
     ) -> Result<RequestTwSession> {
         info!("Preparing to send Request-TW-Session");
         let stream = self.stream.as_ref().unwrap();
@@ -140,7 +140,8 @@ impl ControlClient {
             controller_port,
             receiver_address,
             session_reflector_port,
-            TimeStamp::default(),
+            None,
+            timeout,
         );
         debug!("request-tw-session: {:?}", request_tw_session);
         let encoded = request_tw_session.to_bytes().unwrap();

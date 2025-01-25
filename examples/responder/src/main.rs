@@ -20,29 +20,31 @@ struct Args {
 
     #[arg(short, long, default_value_t = TWAMP_CONTROL_WELL_KNOWN_PORT)]
     port: u16,
+
+    #[arg(short, long, default_value = "900")]
+    refwait: u16,
 }
 
-async fn handle_client(socket: TcpStream) {
-    let mut responder = Responder::new(socket);
+async fn handle_client(socket: TcpStream, refwait: u16) {
+    let responder = Responder::new(socket);
     debug!("Responder created: {:?}", responder);
-    let _ = responder.handle_controller().await;
+    responder.handle_controller(refwait).await.unwrap();
 }
 
 async fn try_main() -> Result<()> {
     let args = Args::parse();
     let socket_addr = SocketAddrV4::new(args.addr, args.port);
-    // listen for clients, then open up tokio task for each one.
-    debug!("Attempting to bind to: {}", socket_addr);
+    debug!("Attempting to bind to: {}/tcp", socket_addr);
 
     let listener = TcpListener::bind(socket_addr).await?;
-    debug!("Successfully binded to: {}", listener.local_addr()?);
+    debug!("Successfully binded to: {}/tcp", listener.local_addr()?);
 
     info!("Listening TWAMP-Control on: {}/tcp", listener.local_addr()?);
     loop {
         let (socket, client_addr) = listener.accept().await?;
-        info!("Received connection from {}", client_addr);
+        info!("Received connection from {}/tcp", client_addr);
         task::spawn(async move {
-            handle_client(socket).await;
+            handle_client(socket, args.refwait).await;
         });
     }
 }

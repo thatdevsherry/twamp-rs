@@ -15,8 +15,8 @@ Currently building for unauthenticated mode only.
 --responder-port 4000 \
 --controller-addr 127.0.0.1 \
 --responder-reflect-port 4001 \
---number-of-test-packets 1 \
---timeout 10 \
+--number-of-test-packets 100 \
+--timeout 10
 
 # Tests
 > cargo test --workspace

@@ -8,20 +8,32 @@ use timestamp::timestamp::TimeStamp;
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]
 pub struct TwampTestPacketUnauthReflected {
-    sequence_number: u32,
-    timestamp: TimeStamp,
-    error_estimate: ErrorEstimate,
+    ///  The sequence number of the test packet according to its transmit order. It starts with
+    ///  zero and is incremented by one for each subsequent packet.  The Sequence Number generated
+    ///  by the Session-Reflector is independent from the sequence number of the arriving packets.
+    pub sequence_number: u32,
+    /// Timestamp when the reflected packet was sent from Session-Reflector.
+    pub timestamp: TimeStamp,
+    pub error_estimate: ErrorEstimate,
     #[deku(assert_eq = "0u16")]
-    mbz_first: u16,
-    receive_timestamp: TimeStamp,
-    sender_sequence_number: u32,
-    sender_timestamp: TimeStamp,
-    error_estimate_sender: ErrorEstimate,
+    pub mbz_first: u16,
+    /// Receive Timestamp is the time the test packet was received by the reflector. The difference
+    /// between Timestamp and Receive Timestamp is the amount of time the packet was in transition
+    /// in the Session-Reflector. The Error Estimate associated with the Timestamp field also
+    /// applies to the Receive Timestamp.
+    pub receive_timestamp: TimeStamp,
+    /// Sender Sequence Number is a copy of the Sequence Number of the packet transmitted by the
+    /// Session-Sender that caused the Session-Reflector to generate and send this test packet.
+    pub sender_sequence_number: u32,
+    /// Exact copy of `timestamp` from Session-Sender.
+    pub sender_timestamp: TimeStamp,
+    /// Exact copy of `ErrorEstimate` from Session-Sender.
+    pub error_estimate_sender: ErrorEstimate,
     #[deku(assert_eq = "0u16")]
-    mbz_second: u16,
-    sender_ttl: u8,
+    pub mbz_second: u16,
+    pub sender_ttl: u8,
     #[deku(count = "27")]
-    packet_padding: Vec<u8>,
+    pub packet_padding: Vec<u8>,
 }
 
 impl Display for TwampTestPacketUnauthReflected {

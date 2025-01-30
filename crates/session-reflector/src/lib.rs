@@ -42,9 +42,9 @@ impl SessionReflector {
                 return Err(anyhow!("REFWAIT expired."));
             }
             let recv_timestamp = TimeStamp::default();
-            debug!("bytes read: {}", bytes_read.unwrap().unwrap());
+            trace!("bytes read: {}", bytes_read.unwrap().unwrap());
             let (_rest, twamp_test_unauth) = TwampTestPacketUnauth::from_bytes((&buf, 0)).unwrap();
-            debug!("Twamp-Test: {:?}", twamp_test_unauth);
+            trace!("Twamp-Test: {:?}", twamp_test_unauth);
             debug!(
                 "Read Twamp-Test with seq: {}",
                 twamp_test_unauth.sequence_number
@@ -55,7 +55,7 @@ impl SessionReflector {
                 let pkt_reflected = TwampTestPacketUnauthReflected::new(seq, pkt, recv_timestamp);
                 let encoded = pkt_reflected.to_bytes().unwrap();
                 let len = sock_clone.send(&encoded[..]).await.unwrap();
-                debug!("Sent reflected pkt of bytes: {}", len);
+                trace!("Sent reflected pkt of bytes: {}", len);
             });
             seq += 1;
         }

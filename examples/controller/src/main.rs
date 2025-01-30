@@ -53,6 +53,13 @@ struct Args {
         help = "Timeout (seconds) used in Request-TW-Session."
     )]
     timeout: u64,
+
+    #[arg(
+        long,
+        default_value = "5",
+        help = "Duration (seconds) to wait before sending Stop-Sessions after test pkts are sent"
+    )]
+    stop_session_sleep: u64,
 }
 
 async fn try_main() -> Result<()> {
@@ -69,6 +76,7 @@ async fn try_main() -> Result<()> {
             args.responder_reflect_port,
             args.number_of_test_packets,
             args.timeout,
+            args.stop_session_sleep,
         )
         .await?;
     Ok(())

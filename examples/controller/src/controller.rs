@@ -1,18 +1,22 @@
 use std::{
     net::{Ipv4Addr, SocketAddrV4},
     sync::Arc,
+    time::Duration,
 };
 
 use anyhow::Result;
 use control_client::ControlClient;
 use session_sender::SessionSender;
+use timestamp::timestamp::TimeStamp;
 use tokio::{
     net::{TcpStream, UdpSocket},
-    spawn,
-    sync::oneshot,
+    select, spawn,
+    sync::{oneshot, Mutex},
+    time::sleep,
     try_join,
 };
 use tracing::*;
+use twamp_test::twamp_test_unauth_reflected::TwampTestPacketUnauthReflected;
 
 #[derive(Debug, Default)]
 pub struct Controller {
@@ -41,6 +45,7 @@ impl Controller {
         responder_reflect_port: u16,
         number_of_test_packets: u32,
         reflector_timeout: u64,
+        stop_session_sleep: u64,
     ) -> Result<()> {
         let twamp_control =
             TcpStream::connect(SocketAddrV4::new(responder_addr, responder_port)).await?;
@@ -65,6 +70,9 @@ impl Controller {
                 .await
                 .unwrap();
         });
+        let reflected_pkts_vec: Arc<Mutex<Vec<(TwampTestPacketUnauthReflected, TimeStamp)>>> =
+            Arc::new(Mutex::new(Vec::new()));
+        let reflected_pkts_vec_cloned = Arc::clone(&reflected_pkts_vec);
         let session_sender_handle = spawn(async move {
             // Wait until we get the Accept-Session's port.
             let final_port = reflector_port_rx.await.unwrap();
@@ -87,20 +95,73 @@ impl Controller {
             let session_sender_recv = Arc::clone(self.session_sender.as_ref().unwrap());
             let send_task = spawn(async move {
                 let _ = session_sender_send.send_it(number_of_test_packets).await;
-                debug!("SEND task END now pls");
+                info!("Sent all test packets");
             });
             let recv_task = spawn(async move {
-                let _ = session_sender_recv.recv(number_of_test_packets).await;
-                debug!("RECV task END now pls");
+                let _ = session_sender_recv
+                    .recv(number_of_test_packets, reflected_pkts_vec_cloned)
+                    .await;
+                info!("Got back all test packets");
             });
             // wait for all test pkts to be sent.
             send_task.await.unwrap();
-            // stop the recv task
-            recv_task.abort();
+
+            select! {
+                // If stop-session-sleep duration finishes before all pkts are received, drop
+                // recv task and conclude.
+                _ = sleep(Duration::from_secs(stop_session_sleep)) => (),
+                // Ignore stop-session-sleep duration if session-sender got all test pkts before
+                // duration.
+                _ = recv_task => ()
+            }
             // Inform Control-Client to send Stop-Sessions
             twamp_test_complete_tx.send(()).unwrap();
         });
         try_join!(control_client_handle, session_sender_handle).unwrap();
+        debug!("Control-Client & Session-Sender tasks completed.");
+        let acquired_vec = reflected_pkts_vec.lock().await;
+        debug!("Reflected pkts len: {}", acquired_vec.len());
+        get_metrics(&acquired_vec, number_of_test_packets as f64);
         Ok(())
     }
+}
+
+fn get_metrics(pkts: &Vec<(TwampTestPacketUnauthReflected, TimeStamp)>, total_sent: f64) {
+    debug!("Producing metrics");
+    let received = pkts.len() as f64;
+    let total_packets_lost = total_sent - received;
+    let total_packets_sent = total_sent;
+    let packet_loss = (total_packets_lost / total_packets_sent) * 100.0;
+    info!("Packet loss: {}%", packet_loss.trunc());
+
+    // RTT
+    let mut rtt_pkts: Vec<f64> = vec![];
+    let mut sender_to_reflector: Vec<f64> = vec![];
+    let mut reflector_to_sender: Vec<f64> = vec![];
+    for pkt in pkts {
+        let t1: f64 = pkt.0.sender_timestamp.into();
+        let t2: f64 = pkt.0.receive_timestamp.into();
+        let t3: f64 = pkt.0.timestamp.into();
+        let t4: f64 = pkt.1.into();
+
+        let rtt = (t4 - t1) - (t3 - t2);
+        let one_way_delay_sent = t2 - t1;
+        let one_way_delay_recv = t4 - t3;
+        rtt_pkts.push(rtt);
+        sender_to_reflector.push(one_way_delay_sent);
+        reflector_to_sender.push(one_way_delay_recv);
+    }
+    let rtt_avg = rtt_pkts.iter().sum::<f64>() / received;
+    let sender_to_reflector_avg = sender_to_reflector.iter().sum::<f64>() / received;
+    let reflector_to_sender_avg = reflector_to_sender.iter().sum::<f64>() / received;
+
+    info!("RTT: {}us", (rtt_avg * 1e6).trunc());
+    info!(
+        "Sender to Reflector: {}us",
+        (sender_to_reflector_avg * 1e6).trunc()
+    );
+    info!(
+        "Reflector to Sender: {}us",
+        (reflector_to_sender_avg * 1e6).trunc()
+    );
 }

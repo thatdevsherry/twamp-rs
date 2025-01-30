@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 control-client = { path = "../../crates/control-client" }
 twamp-control = { path = "../../crates/twamp-control" }
+timestamp = { path = "../../crates/timestamp" }
 twamp-test = { path = "../../crates/twamp-test" }
 session-sender = { path = "../../crates/session-sender" }
 anyhow = "1.0.81"

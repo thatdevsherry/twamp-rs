@@ -2,7 +2,10 @@ use crate::constants::NTP_EPOCH;
 use deku::prelude::*;
 use std::{
     fmt::Display,
+    iter::Sum,
+    ops::{Add, Sub},
     time::{Duration, SystemTime, UNIX_EPOCH},
+    u32,
 };
 
 /// See [RFC 1305](https://datatracker.ietf.org/doc/html/rfc1305) for the format.
@@ -11,6 +14,61 @@ use std::{
 pub struct TimeStamp {
     integer_part_of_seconds: u32,
     fractional_part_of_seconds: u32,
+}
+
+impl Sum for TimeStamp {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(
+            TimeStamp {
+                integer_part_of_seconds: 0,
+                fractional_part_of_seconds: 0,
+            },
+            |acc, x| acc + x,
+        )
+    }
+}
+
+impl Add for TimeStamp {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        let (fractional_sum, fractional_carry) = self
+            .fractional_part_of_seconds
+            .overflowing_add(rhs.fractional_part_of_seconds);
+        let integer_part_of_seconds =
+            self.integer_part_of_seconds + rhs.integer_part_of_seconds + (fractional_carry as u32);
+        let fractional_part_of_seconds = fractional_sum.wrapping_add(1);
+
+        TimeStamp {
+            integer_part_of_seconds,
+            fractional_part_of_seconds,
+        }
+    }
+}
+
+impl Sub for TimeStamp {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let mut integer_part_of_seconds = self.integer_part_of_seconds;
+        let mut fractional_part_of_seconds = self.fractional_part_of_seconds;
+
+        if self.fractional_part_of_seconds < rhs.fractional_part_of_seconds {
+            integer_part_of_seconds -= 1;
+            fractional_part_of_seconds += u32::MAX;
+        }
+
+        TimeStamp {
+            integer_part_of_seconds: integer_part_of_seconds - rhs.integer_part_of_seconds,
+            fractional_part_of_seconds: fractional_part_of_seconds - rhs.fractional_part_of_seconds,
+        }
+    }
+}
+
+impl From<TimeStamp> for f64 {
+    fn from(value: TimeStamp) -> Self {
+        value.integer_part_of_seconds as f64
+            + (value.fractional_part_of_seconds as f64 / u32::MAX as f64)
+    }
 }
 
 impl TryFrom<Duration> for TimeStamp {
@@ -76,5 +134,47 @@ mod tests {
             (integer_part + NTP_EPOCH) as u32
         );
         assert_eq!(timestamp.fractional_part_of_seconds, fractional_part);
+    }
+
+    #[test]
+    fn subtraction_from_bigger_to_smaller() {
+        let t1 = TimeStamp {
+            integer_part_of_seconds: 10,
+            fractional_part_of_seconds: 1_000_000_000,
+        };
+        let t2 = TimeStamp {
+            integer_part_of_seconds: 8,
+            fractional_part_of_seconds: 1_000_000_000,
+        };
+        let result = t1 - t2;
+        assert_eq!(
+            result,
+            TimeStamp {
+                integer_part_of_seconds: 2,
+                fractional_part_of_seconds: 0
+            }
+        )
+    }
+
+    #[test]
+    fn addition() {
+        let ts1 = TimeStamp {
+            integer_part_of_seconds: 1,
+            fractional_part_of_seconds: 3_000_000_000,
+        };
+
+        let ts2 = TimeStamp {
+            integer_part_of_seconds: 2,
+            fractional_part_of_seconds: 2_500_000_000,
+        };
+
+        let result = ts1 + ts2;
+        assert_eq!(
+            result,
+            TimeStamp {
+                integer_part_of_seconds: 4,
+                fractional_part_of_seconds: 1_205_032_705
+            }
+        )
     }
 }

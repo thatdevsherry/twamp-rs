@@ -1,0 +1,5 @@
+cargo build --release -p responder
+
+RUST_LOG=INFO \
+./target/release/responder \
+-p 4000

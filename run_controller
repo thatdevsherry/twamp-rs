@@ -1,0 +1,10 @@
+cargo build --release -p controller
+
+./target/release/controller \
+--responder-addr 127.0.0.1 \
+--responder-port 4000 \
+--controller-addr 127.0.0.1 \
+--responder-reflect-port 4001 \
+--number-of-test-packets 65535 \
+--timeout 10 \
+--stop-session-sleep 5

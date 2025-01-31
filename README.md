@@ -67,6 +67,11 @@ Currently building for unauthenticated mode only.
 Tested on localhost with increased udp buffer.
 
 ```bash
+sudo sysctl -w net.core.rmem_max=16777216
+sudo sysctl -w net.core.rmem_default=16777216
+```
+
+```bash
 ❯ ./run_controller
     Finished `release` profile [optimized] target(s) in 0.03s
 2025-01-31T07:29:30.601345Z  INFO controller: Controller initialized

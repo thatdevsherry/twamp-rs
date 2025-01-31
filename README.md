@@ -45,7 +45,7 @@ Currently building for unauthenticated mode only.
 - [x] send stop-sessions
 - [ ] configurable twamp-test
 - [ ] configurable twamp-control
-- [ ] output for use in metrics (jitter, RTT etc)
+- [x] metrics
 
 ### Responder
 

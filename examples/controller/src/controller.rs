@@ -1,3 +1,4 @@
+use core::f64;
 use std::{
     net::{Ipv4Addr, SocketAddrV4},
     sync::Arc,
@@ -127,7 +128,7 @@ impl Controller {
 }
 
 fn get_metrics(pkts: &Vec<(TwampTestPacketUnauthReflected, TimeStamp)>, total_sent: f64) {
-    debug!("Producing metrics");
+    info!("Producing metrics");
     let received = pkts.len() as f64;
     let total_packets_lost = total_sent - received;
     let total_packets_sent = total_sent;
@@ -154,14 +155,26 @@ fn get_metrics(pkts: &Vec<(TwampTestPacketUnauthReflected, TimeStamp)>, total_se
     let rtt_avg = rtt_pkts.iter().sum::<f64>() / received;
     let sender_to_reflector_avg = sender_to_reflector.iter().sum::<f64>() / received;
     let reflector_to_sender_avg = reflector_to_sender.iter().sum::<f64>() / received;
+    let rtt_min = rtt_pkts.iter().copied().fold(f64::INFINITY, f64::min);
+    let rtt_max = rtt_pkts.iter().copied().fold(f64::NEG_INFINITY, f64::max);
 
-    info!("RTT: {}us", (rtt_avg * 1e6).trunc());
+    info!("RTT (MIN): {:.2}ms", (rtt_min * 1e3));
+    info!("RTT (MAX): {:.2}ms", (rtt_max * 1e3));
+    info!("RTT (AVG): {:.2}ms", (rtt_avg * 1e3));
     info!(
-        "Sender to Reflector: {}us",
-        (sender_to_reflector_avg * 1e6).trunc()
+        "OWD (Sender -> Reflector) (AVG): {:.2}ms",
+        (sender_to_reflector_avg * 1e3)
     );
     info!(
-        "Reflector to Sender: {}us",
-        (reflector_to_sender_avg * 1e6).trunc()
+        "OWD (Reflector -> Sender) (AVG): {:.2}ms",
+        (reflector_to_sender_avg * 1e3)
     );
+
+    let mut jitter = 0.0;
+    for i in 1..rtt_pkts.len() {
+        let rtt_diff = (rtt_pkts[i] - rtt_pkts[i - 1]).abs();
+        jitter = jitter + (rtt_diff - jitter) / 16.0;
+    }
+
+    info!("Jitter: {:.2}ms", jitter * 1e3)
 }

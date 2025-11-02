@@ -36,6 +36,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check Rust version
+        run: rustc --version
+
       - name: Build docs
         run: cargo doc --no-deps --workspace --verbose
 

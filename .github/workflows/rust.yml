@@ -20,14 +20,11 @@ concurrency:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Run tests
       run: cargo test --workspace --verbose
-
   docs:
     # main only
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -35,21 +32,14 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v4
-
-      - name: Check Rust version
-        run: rustc --version
-
       - name: Build docs
-        run: cargo doc --no-deps --workspace --verbose
-
+        run: cargo doc --no-deps --all-features --workspace
       - name: Add redirect
-        run: echo '<meta http-equiv="refresh" content="0;url=twamp_rs/index.html">' > target/doc/index.html
-
+        run: echo '<html><head><meta http-equiv="refresh" content="0; URL=./twamp_rs" /></head></html>' > target/doc/index.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./target/doc
-
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:

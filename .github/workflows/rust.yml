@@ -32,7 +32,7 @@ jobs:
     # main only
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    need: build
+    needs: build
     steps:
       - uses: actions/checkout@v4
 
@@ -53,7 +53,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.output.page_url }}
     runs-on: ubuntu-latest
-    need: docs
+    needs: docs
     steps:
       - name: Deploy to Github Pages
         id: deployment

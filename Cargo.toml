@@ -1,12 +1,6 @@
 [workspace]
 members = [
-  "crates/timestamp",
-  "crates/twamp-control",
-  "crates/control-client",
-  "crates/server",
-  "crates/twamp-test",
-  "crates/session-sender",
-  "crates/session-reflector",
+  "crates/*",
 ]
 
 [package]

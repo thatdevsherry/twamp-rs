@@ -188,22 +188,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "controller"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "control-client",
- "session-sender",
- "timestamp",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "twamp-control",
- "twamp-test",
-]
-
-[[package]]
 name = "darling"
 version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -332,9 +316,9 @@ dependencies = [
 
 [[package]]
 name = "lazy_static"
-version = "1.4.0"
+version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"
@@ -354,9 +338,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.21"
+version = "0.4.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
+checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 
 [[package]]
 name = "memchr"
@@ -564,20 +548,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "responder"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "server",
- "session-reflector",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "twamp-control",
-]
-
-[[package]]
 name = "rustc-demangle"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -704,12 +674,11 @@ checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
 name = "thread_local"
-version = "1.1.8"
+version = "1.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b9ef9bad013ada3808854ceac7b46812a6465ba368859a37e2100283d2d719c"
+checksum = "f60246a4944f24f6e018aa17cdeffb7818b76356965d03b07d6a9886e8962185"
 dependencies = [
  "cfg-if",
- "once_cell",
 ]
 
 [[package]]
@@ -822,9 +791,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-subscriber"
-version = "0.3.18"
+version = "0.3.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad0f048c97dbd9faa9b7df56362b8ebcaa52adb06b498c050d2f4e32f90a7a8b"
+checksum = "e8189decb5ac0fa7bc8b96b7cb9b2701d60d48805aca84a238004d665fcc4008"
 dependencies = [
  "nu-ansi-term",
  "sharded-slab",
@@ -851,6 +820,20 @@ dependencies = [
 [[package]]
 name = "twamp-rs"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "control-client",
+ "server",
+ "session-reflector",
+ "session-sender",
+ "timestamp",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "twamp-control",
+ "twamp-test",
+]
 
 [[package]]
 name = "twamp-test"
@@ -875,9 +858,9 @@ checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
 
 [[package]]
 name = "valuable"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
+checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 
 [[package]]
 name = "wasi"

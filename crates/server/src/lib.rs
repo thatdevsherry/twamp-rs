@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use deku::prelude::*;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};

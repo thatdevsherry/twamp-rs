@@ -1,17 +1,12 @@
 [workspace]
 members = [
   "crates/timestamp",
-
   "crates/twamp-control",
   "crates/control-client",
   "crates/server",
-
   "crates/twamp-test",
   "crates/session-sender",
   "crates/session-reflector",
-
-  "examples/controller",
-  "examples/responder",
 ]
 
 [package]
@@ -24,10 +19,26 @@ description = "Implementation of TWAMP (RFC 5357)"
 [workspace.dependencies]
 deku = "0.16.0"
 
-#[[example]]
-#name = "controller"
-#path = "examples/controller/src/main.rs"
+[dependencies]
+control-client = { path = "crates/control-client" }
+server = { path = "crates/server" }
+session-reflector = { path = "crates/session-reflector" }
+session-sender = { path = "crates/session-sender" }
+timestamp = { path = "crates/timestamp" }
+twamp-control = { path = "crates/twamp-control" }
+twamp-test = { path = "crates/twamp-test" }
 
-#[[example]]
-#name = "responder"
-#path = "examples/responder/src/main.rs"
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+clap = { version = "4", features = ["derive"] }
+anyhow = "1.0.81"
+tracing = "0.1.40"
+tracing-subscriber = "0.3"
+
+[[example]]
+name = "controller"
+path = "examples/controller/main.rs"
+
+[[example]]
+name = "responder"
+path = "examples/responder/main.rs"

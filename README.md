@@ -8,9 +8,10 @@ Supports unauthenticated mode only.
 ```bash
 # Run server first.
 > cargo run -p responder -- -p 4000 # defaults to 862 which needs permissions
+> cargo run --example responder -- --port 4000 
 
 # Run client
-> cargo run -p controller -- \
+> cargo run --example controller -- \
 --responder-addr 127.0.0.1 \
 --responder-port 4000 \
 --controller-addr 127.0.0.1 \

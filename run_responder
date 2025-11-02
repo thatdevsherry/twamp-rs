@@ -1,5 +1,4 @@
-cargo build --release -p responder
+cargo build --release --example responder
 
-RUST_LOG=INFO \
-./target/release/responder \
+./target/release/examples/responder \
 -p 4000

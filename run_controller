@@ -1,6 +1,6 @@
-cargo build --release -p controller
+cargo build --release --example controller
 
-./target/release/controller \
+./target/release/examples/controller \
 --responder-addr 127.0.0.1 \
 --responder-port 4000 \
 --controller-addr 127.0.0.1 \

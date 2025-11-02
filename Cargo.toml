@@ -13,7 +13,7 @@ members = [
 name = "twamp-rs"
 version = "0.1.0"
 authors = ["Shehriyar Qureshi <thatdevsherry@gmail.com>"]
-edition = "2021"
+edition = "2024"
 description = "Implementation of TWAMP (RFC 5357)"
 
 [workspace.dependencies]

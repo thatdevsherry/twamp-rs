@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use deku::prelude::*;
 use std::mem::size_of;
 use std::net::IpAddr;

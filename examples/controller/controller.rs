@@ -73,50 +73,52 @@ impl Controller {
         });
         let reflected_pkts_vec: Arc<Mutex<Vec<(TwampTestPacketUnauthReflected, TimeStamp)>>> =
             Arc::new(Mutex::new(Vec::new()));
-        let reflected_pkts_vec_cloned = Arc::clone(&reflected_pkts_vec);
-        let session_sender_handle = spawn(async move {
-            // Wait until we get the Accept-Session's port.
-            let final_port = reflector_port_rx.await.unwrap();
-            debug!("Received reflector port: {}", final_port);
-            udp_socket
-                .connect(SocketAddrV4::new(responder_addr, final_port))
-                .await
-                .unwrap();
-            // Wait until start-sessions is received
-            start_session_rx.await.unwrap();
-            debug!("Start-Session identified. Start Session-Sender.");
-            self.session_sender = Some(Arc::new(
-                SessionSender::new(
-                    Arc::new(udp_socket),
-                    SocketAddrV4::new(responder_addr, final_port),
-                )
-                .await,
-            ));
-            let session_sender_send = Arc::clone(self.session_sender.as_ref().unwrap());
-            let session_sender_recv = Arc::clone(self.session_sender.as_ref().unwrap());
-            let send_task = spawn(async move {
-                let _ = session_sender_send.send_it(number_of_test_packets).await;
-                info!("Sent all test packets");
-            });
-            let recv_task = spawn(async move {
-                let _ = session_sender_recv
-                    .recv(number_of_test_packets, reflected_pkts_vec_cloned)
-                    .await;
-                info!("Got back all test packets");
-            });
-            // wait for all test pkts to be sent.
-            send_task.await.unwrap();
+        let session_sender_handle = spawn({
+            let reflected_pkts_vec = Arc::clone(&reflected_pkts_vec);
+            async move {
+                // Wait until we get the Accept-Session's port.
+                let final_port = reflector_port_rx.await.unwrap();
+                debug!("Received reflector port: {}", final_port);
+                udp_socket
+                    .connect(SocketAddrV4::new(responder_addr, final_port))
+                    .await
+                    .unwrap();
+                // Wait until start-sessions is received
+                start_session_rx.await.unwrap();
+                debug!("Start-Session identified. Start Session-Sender.");
+                self.session_sender = Some(Arc::new(
+                    SessionSender::new(
+                        Arc::new(udp_socket),
+                        SocketAddrV4::new(responder_addr, final_port),
+                    )
+                    .await,
+                ));
+                let session_sender_send = Arc::clone(self.session_sender.as_ref().unwrap());
+                let session_sender_recv = Arc::clone(self.session_sender.as_ref().unwrap());
+                let send_task = spawn(async move {
+                    let _ = session_sender_send.send_it(number_of_test_packets).await;
+                    info!("Sent all test packets");
+                });
+                let recv_task = spawn(async move {
+                    let _ = session_sender_recv
+                        .recv(number_of_test_packets, reflected_pkts_vec)
+                        .await;
+                    info!("Got back all test packets");
+                });
+                // wait for all test pkts to be sent.
+                send_task.await.unwrap();
 
-            select! {
-                // If stop-session-sleep duration finishes before all pkts are received, drop
-                // recv task and conclude.
-                _ = sleep(Duration::from_secs(stop_session_sleep)) => (),
-                // Ignore stop-session-sleep duration if session-sender got all test pkts before
-                // duration.
-                _ = recv_task => ()
+                select! {
+                    // If stop-session-sleep duration finishes before all pkts are received, drop
+                    // recv task and conclude.
+                    _ = sleep(Duration::from_secs(stop_session_sleep)) => (),
+                    // Ignore stop-session-sleep duration if session-sender got all test pkts before
+                    // duration.
+                    _ = recv_task => ()
+                }
+                // Inform Control-Client to send Stop-Sessions
+                twamp_test_complete_tx.send(()).unwrap();
             }
-            // Inform Control-Client to send Stop-Sessions
-            twamp_test_complete_tx.send(()).unwrap();
         });
         try_join!(control_client_handle, session_sender_handle).unwrap();
         debug!("Control-Client & Session-Sender tasks completed.");

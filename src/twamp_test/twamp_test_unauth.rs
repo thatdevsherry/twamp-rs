@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
-use crate::error_estimate::ErrorEstimate;
+use super::error_estimate::ErrorEstimate;
+use crate::timestamp::timestamp::TimeStamp;
 use deku::prelude::*;
-use timestamp::timestamp::TimeStamp;
 
 /// The packet sent by Session-Sender to Session-Reflector.
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]

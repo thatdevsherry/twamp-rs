@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::security_mode::Mode;
+use super::security_mode::Mode;
 use deku::prelude::*;
 use rand::random;
 

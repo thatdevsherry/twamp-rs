@@ -1,4 +1,4 @@
-use crate::accept::Accept;
+use super::accept::Accept;
 use deku::prelude::*;
 
 /// Response for a Request-TW-Session command.

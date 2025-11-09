@@ -11,17 +11,10 @@
 //! - [`twamp_control`] - TWAMP control protocol
 //! - [`twamp_test`] - TWAMP test protocol
 
-#[doc(inline)]
-pub use control_client;
-#[doc(inline)]
-pub use server;
-#[doc(inline)]
-pub use session_reflector;
-#[doc(inline)]
-pub use session_sender;
-#[doc(inline)]
-pub use timestamp;
-#[doc(inline)]
-pub use twamp_control;
-#[doc(inline)]
-pub use twamp_test;
+pub mod control_client;
+pub mod server;
+pub mod session_reflector;
+pub mod session_sender;
+pub mod timestamp;
+pub mod twamp_control;
+pub mod twamp_test;

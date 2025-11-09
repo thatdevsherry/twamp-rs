@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
-use crate::{error_estimate::ErrorEstimate, twamp_test_unauth::TwampTestPacketUnauth};
+use super::{error_estimate::ErrorEstimate, twamp_test_unauth::TwampTestPacketUnauth};
+use crate::timestamp::timestamp::TimeStamp;
 use deku::prelude::*;
-use timestamp::timestamp::TimeStamp;
 
 /// The packet sent by Session-Reflector to Session-Sender.
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]

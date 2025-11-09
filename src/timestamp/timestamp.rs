@@ -1,4 +1,4 @@
-use crate::constants::NTP_EPOCH;
+use super::constants::NTP_EPOCH;
 use deku::prelude::*;
 use std::{
     fmt::Display,

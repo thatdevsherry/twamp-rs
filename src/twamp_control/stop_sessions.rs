@@ -1,4 +1,4 @@
-use crate::{accept::Accept, command_number::CommandNumber};
+use super::{accept::Accept, command_number::CommandNumber};
 use deku::prelude::*;
 
 /// Server Greeting sent by `Server` to `Control-Client` after `Control-Client` opens up a TCP

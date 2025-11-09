@@ -1,33 +1,24 @@
-[workspace]
-members = [
-  "crates/*",
-]
-
 [package]
 name = "twamp-rs"
 version = "0.1.0"
 authors = ["Shehriyar Qureshi <thatdevsherry@gmail.com>"]
 edition = "2024"
 description = "Implementation of TWAMP (RFC 5357)"
-
-[workspace.dependencies]
-deku = "0.16.0"
+license-file = "LICENSE.txt"
+readme = "README.md"
+repository = "https://github.com/thatdevsherry/twamp-rs"
+categories = ["network-programming"]
+keywords = ["twamp", "rfc", "5357", "network", "analysis"]
 
 [dependencies]
-control-client = { path = "crates/control-client" }
-server = { path = "crates/server" }
-session-reflector = { path = "crates/session-reflector" }
-session-sender = { path = "crates/session-sender" }
-timestamp = { path = "crates/timestamp" }
-twamp-control = { path = "crates/twamp-control" }
-twamp-test = { path = "crates/twamp-test" }
-
-[dev-dependencies]
 tokio = { version = "1", features = ["full"] }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1.0.81"
 tracing = "0.1.40"
 tracing-subscriber = "0.3"
+deku = "0.16.0"
+num_enum = "0.7.5"
+rand = "0.9.2"
 
 [[example]]
 name = "controller"

@@ -1,14 +1,14 @@
 use std::{sync::Arc, time::Duration};
 
-use anyhow::{anyhow, Result};
-use deku::prelude::*;
-use timestamp::timestamp::TimeStamp;
-use tokio::{net::UdpSocket, spawn, time::timeout};
-use tracing::*;
-use twamp_test::{
+use crate::timestamp::timestamp::TimeStamp;
+use crate::twamp_test::{
     twamp_test_unauth::TwampTestPacketUnauth,
     twamp_test_unauth_reflected::TwampTestPacketUnauthReflected,
 };
+use anyhow::{Result, anyhow};
+use deku::prelude::*;
+use tokio::{net::UdpSocket, spawn, time::timeout};
+use tracing::*;
 
 #[derive(Debug)]
 pub struct SessionReflector {
@@ -32,7 +32,7 @@ impl SessionReflector {
         loop {
             let sock_clone = Arc::clone(&sock);
             let mut buf = [0u8; 1472]; // 1472 for max MTU. Even though we aren't setting padding
-                                       // above 27. Still setting this big for now.
+            // above 27. Still setting this big for now.
             let bytes_read = timeout(
                 Duration::from_secs(self.refwait.into()),
                 sock_clone.recv(&mut buf),

@@ -1,4 +1,4 @@
-use crate::security_mode::Mode;
+use super::security_mode::Mode;
 use anyhow::Result;
 use deku::prelude::*;
 

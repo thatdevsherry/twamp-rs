@@ -33,8 +33,7 @@ impl Default for StartSessions {
 
 #[cfg(test)]
 mod tests {
-    use super::StartSessions;
-    use crate::command_number::CommandNumber;
+    use super::*;
     use deku::{DekuContainerRead, DekuContainerWrite};
 
     const START_SESSIONS_LENGTH_IN_BYTES: usize = 32;

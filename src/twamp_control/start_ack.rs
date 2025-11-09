@@ -27,7 +27,6 @@ impl StartAck {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::accept::Accept;
     const START_ACK_LENGTH_IN_BYTES: usize = 32;
 
     #[test]

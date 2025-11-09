@@ -30,8 +30,6 @@ impl StopSessions {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{accept::Accept, command_number::CommandNumber};
-
     const STOP_SESSIONS_LENGTH_IN_BYTES: usize = 20;
 
     #[test]

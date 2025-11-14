@@ -45,7 +45,7 @@ This crate provides an implementation of TWAMP [RFC 5357](https://datatracker.ie
 ./run_client
 
 # Tests
-> cargo test --workspace
+> cargo test
 > cargo test --doc
 
 # Open docs in browser

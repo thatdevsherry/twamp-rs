@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Crate Badge]][Crate] [![Repo Badge]][Repo] [![Docs Badge]][Docs] [![License Badge]][License]
+[![Crate Badge]][Crate] [![Docs Badge]][Docs] [![License Badge]][License]
 </div>
 
 This crate provides an implementation of TWAMP [RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357) along with building blocks for making your own.
@@ -103,4 +103,4 @@ sudo sysctl -w net.core.rmem_default=16777216
 [Repo Badge]: https://img.shields.io/badge/repo-thatdevsherry/twamp-rs?style=flat-square&logo=github&color=blue
 [Docs Badge]: https://img.shields.io/badge/docs-twamp-rs?style=flat-square&logo=rust&color=red
 [License]: ./LICENSE.txt
-[License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square&color=1370D3
+[License Badge]: https://img.shields.io/crates/l/twamp-rs?style=flat-square&color=1370D3

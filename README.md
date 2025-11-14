@@ -5,15 +5,31 @@
 [![Crate Badge]][Crate] [![Repo Badge]][Repo] [![Docs Badge]][Docs] [![License Badge]][License]
 </div>
 
-TWAMP [RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357) implementation
-in rust.
+This crate provides an implementation of TWAMP [RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357) along with building blocks for making your own.
 
-Supports unauthenticated mode only.
+## Features
+- [x] TWAMP-Control 
+- [x] TWAMP-Test
+- [x] Control-Client
+- [x] Server
+- [x] Session-Sender
+- [x] Session-Reflector
+- [ ] Security Modes
+    - [x] Unauthenticated
+    - [ ] Authenticated
+    - [ ] Encrypted
+- [ ] DSCP (QoS)
+- [x] TWAMP-full
+    - [x] Controller (control-client + session-sender)
+    - [x] Responder (server + session-reflector)
+- [ ] TWAMP-Light
+    - [ ] Controller (server + control-client + session-sender)
+    - [ ] Responder (session-reflector)
 
+## Setup and run
 ```bash
 # Run server first.
-> cargo run -p responder -- -p 4000 # defaults to 862 which needs permissions
-> cargo run --example responder -- --port 4000 
+> cargo run --example responder -- --port 4000 # defaults to 862 which needs permissions
 
 # Run client
 > cargo run --example controller -- \
@@ -30,6 +46,7 @@ Supports unauthenticated mode only.
 
 # Tests
 > cargo test --workspace
+> cargo test --doc
 
 # Open docs in browser
 > cargo doc --workspace --no-deps --open

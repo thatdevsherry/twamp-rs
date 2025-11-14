@@ -11,7 +11,7 @@ use tokio::{
 use tracing::*;
 use twamp_rs::server::Server;
 use twamp_rs::session_reflector::SessionReflector;
-use twamp_rs::twamp_control::request_tw_session::RequestTwSession;
+use twamp_rs::twamp_control::RequestTwSession;
 
 #[derive(Debug)]
 pub struct Responder {

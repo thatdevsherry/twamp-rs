@@ -1,4 +1,4 @@
-use super::accept::Accept;
+use super::Accept;
 use deku::prelude::*;
 
 /// Server Greeting sent by `Server` to `Control-Client` after `Control-Client` opens up a TCP

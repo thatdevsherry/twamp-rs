@@ -1,13 +1,13 @@
-use crate::twamp_control::accept::Accept;
-use crate::twamp_control::accept_session::AcceptSession;
-use crate::twamp_control::request_tw_session::RequestTwSession;
-use crate::twamp_control::security_mode::Mode;
-use crate::twamp_control::server_greeting::ServerGreeting;
-use crate::twamp_control::server_start::ServerStart;
-use crate::twamp_control::set_up_response::SetUpResponse;
-use crate::twamp_control::start_ack::StartAck;
-use crate::twamp_control::start_sessions::StartSessions;
-use crate::twamp_control::stop_sessions::StopSessions;
+use crate::twamp_control::Accept;
+use crate::twamp_control::AcceptSession;
+use crate::twamp_control::RequestTwSession;
+use crate::twamp_control::SecurityMode;
+use crate::twamp_control::ServerGreeting;
+use crate::twamp_control::ServerStart;
+use crate::twamp_control::SetUpResponse;
+use crate::twamp_control::StartAck;
+use crate::twamp_control::StartSessions;
+use crate::twamp_control::StopSessions;
 use anyhow::{Result, anyhow};
 use deku::prelude::*;
 use std::mem::size_of;
@@ -90,7 +90,7 @@ impl ControlClient {
     /// Creates a `SetUpResponse`, converts to bytes and sends it out on `TWAMP-Control`.
     pub async fn send_set_up_response(&mut self) -> Result<()> {
         info!("Preparing to send Set-Up-Response");
-        let set_up_response = SetUpResponse::new(Mode::Unauthenticated);
+        let set_up_response = SetUpResponse::new(SecurityMode::Unauthenticated);
         debug!("Set-Up-Response: {:?}", set_up_response);
         let encoded = set_up_response.unwrap().to_bytes().unwrap();
         self.stream

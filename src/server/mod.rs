@@ -1,13 +1,13 @@
+use crate::twamp_control::Accept;
+use crate::twamp_control::AcceptSession;
 use crate::twamp_control::Messages;
-use crate::twamp_control::accept::Accept;
-use crate::twamp_control::accept_session::AcceptSession;
-use crate::twamp_control::request_tw_session::RequestTwSession;
-use crate::twamp_control::security_mode::Mode;
-use crate::twamp_control::server_start::ServerStart;
-use crate::twamp_control::start_ack::StartAck;
-use crate::twamp_control::start_sessions::StartSessions;
-use crate::twamp_control::stop_sessions::StopSessions;
-use crate::twamp_control::{server_greeting::ServerGreeting, set_up_response::SetUpResponse};
+use crate::twamp_control::RequestTwSession;
+use crate::twamp_control::SecurityMode;
+use crate::twamp_control::ServerStart;
+use crate::twamp_control::StartAck;
+use crate::twamp_control::StartSessions;
+use crate::twamp_control::StopSessions;
+use crate::twamp_control::{ServerGreeting, SetUpResponse};
 use anyhow::Result;
 use deku::prelude::*;
 use std::time::Duration;
@@ -130,7 +130,7 @@ impl Server {
     /// Creates a `ServerGreeting`, converts to bytes and sends it out on `TWAMP-Control`.
     pub async fn send_server_greeting(&mut self) -> Result<ServerGreeting> {
         info!("Sending ServerGreeting");
-        let server_greeting = ServerGreeting::new(&[Mode::Unauthenticated]);
+        let server_greeting = ServerGreeting::new(&[SecurityMode::Unauthenticated]);
         debug!("ServerGreeting: {:?}", server_greeting);
         let encoded = server_greeting.to_bytes().unwrap();
         self.socket.write_all(&encoded[..]).await?;

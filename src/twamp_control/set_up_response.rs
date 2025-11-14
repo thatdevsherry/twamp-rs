@@ -1,4 +1,4 @@
-use super::security_mode::Mode;
+use super::SecurityMode;
 use anyhow::Result;
 use deku::prelude::*;
 
@@ -10,7 +10,7 @@ pub struct SetUpResponse {
     /// The [security mode](crate::security_mode::Mode) that `Control-Client` wishes to use.
     /// It **should** be a mode that the Server supports, which it had sent in
     /// [Server Greeting](crate::server_greeting::ServerGreeting).
-    mode: Mode,
+    mode: SecurityMode,
 
     /// UTF-8 string up to 80 bytes, padded with zeros if shorter. Tells `Server` which shared
     /// secret the client wishes to use to authenticate or encrypt.
@@ -35,9 +35,9 @@ impl SetUpResponse {
     /// Attempt to create Set-Up-Response with provided mode.
     ///
     /// Errors if the provided mode is not supported by `twamp-rs`.
-    pub fn new(mode: Mode) -> Result<Self, String> {
+    pub fn new(mode: SecurityMode) -> Result<Self, String> {
         match mode {
-            Mode::Reserved | Mode::Unauthenticated => Ok(SetUpResponse {
+            SecurityMode::Reserved | SecurityMode::Unauthenticated => Ok(SetUpResponse {
                 mode,
                 key_id: [0; 80],
                 token: [0; 64],
@@ -60,21 +60,21 @@ mod tests {
 
     #[test]
     fn unused_key_id_in_unauth_mode() {
-        let set_up_response = SetUpResponse::new(Mode::Unauthenticated)
+        let set_up_response = SetUpResponse::new(SecurityMode::Unauthenticated)
             .expect("should have created set_up_response.");
         assert_eq!(set_up_response.key_id.iter().fold(0, |acc, v| acc + v), 0);
     }
 
     #[test]
     fn unused_token_in_unauth_mode() {
-        let set_up_response = SetUpResponse::new(Mode::Unauthenticated)
+        let set_up_response = SetUpResponse::new(SecurityMode::Unauthenticated)
             .expect("should have created set_up_response.");
         assert_eq!(set_up_response.token.iter().fold(0, |acc, v| acc + v), 0);
     }
 
     #[test]
     fn unused_client_iv_in_unauth_mode() {
-        let set_up_response = SetUpResponse::new(Mode::Unauthenticated)
+        let set_up_response = SetUpResponse::new(SecurityMode::Unauthenticated)
             .expect("should have created set_up_response.");
         assert_eq!(
             set_up_response.client_iv.iter().fold(0, |acc, v| acc + v),
@@ -84,22 +84,22 @@ mod tests {
 
     #[test]
     fn unused_key_id_in_reserved_mode() {
-        let set_up_response =
-            SetUpResponse::new(Mode::Reserved).expect("should have created set_up_response.");
+        let set_up_response = SetUpResponse::new(SecurityMode::Reserved)
+            .expect("should have created set_up_response.");
         assert_eq!(set_up_response.key_id.iter().fold(0, |acc, v| acc + v), 0);
     }
 
     #[test]
     fn unused_token_in_reserved_mode() {
-        let set_up_response =
-            SetUpResponse::new(Mode::Reserved).expect("should have created set_up_response.");
+        let set_up_response = SetUpResponse::new(SecurityMode::Reserved)
+            .expect("should have created set_up_response.");
         assert_eq!(set_up_response.token.iter().fold(0, |acc, v| acc + v), 0);
     }
 
     #[test]
     fn unused_client_iv_in_reserved_mode() {
-        let set_up_response =
-            SetUpResponse::new(Mode::Reserved).expect("should have created set_up_response.");
+        let set_up_response = SetUpResponse::new(SecurityMode::Reserved)
+            .expect("should have created set_up_response.");
         assert_eq!(
             set_up_response.client_iv.iter().fold(0, |acc, v| acc + v),
             0
@@ -110,27 +110,28 @@ mod tests {
     #[test]
     #[should_panic]
     fn panic_on_mode_auth() {
-        SetUpResponse::new(Mode::Authenticated).expect("should have created set_up_response.");
+        SetUpResponse::new(SecurityMode::Authenticated)
+            .expect("should have created set_up_response.");
     }
 
     /// Unsupported mode by twamp-rs.
     #[test]
     #[should_panic]
     fn panic_on_mode_encrypted() {
-        SetUpResponse::new(Mode::Encrypted).expect("should have created set_up_response.");
+        SetUpResponse::new(SecurityMode::Encrypted).expect("should have created set_up_response.");
     }
 
     /// Unsupported mode by twamp-rs.
     #[test]
     #[should_panic]
     fn panic_on_mode_mixed_security() {
-        SetUpResponse::new(Mode::EncryptedControlUnauthTest)
+        SetUpResponse::new(SecurityMode::EncryptedControlUnauthTest)
             .expect("should have created set_up_response.");
     }
 
     #[test]
     fn serialize_to_correct_length_of_bytes() {
-        let set_up_response = SetUpResponse::new(Mode::Unauthenticated)
+        let set_up_response = SetUpResponse::new(SecurityMode::Unauthenticated)
             .expect("should have created set_up_response.");
         let encoded = set_up_response.to_bytes().unwrap();
         assert_eq!(encoded.len(), SET_UP_RESPONSE_LENGTH_IN_BYTES)
@@ -138,7 +139,7 @@ mod tests {
 
     #[test]
     fn deserialize_to_struct() {
-        let set_up_response = SetUpResponse::new(Mode::Unauthenticated)
+        let set_up_response = SetUpResponse::new(SecurityMode::Unauthenticated)
             .expect("should have created set_up_response.");
         let encoded = set_up_response.to_bytes().unwrap();
         let (_rest, val) = SetUpResponse::from_bytes((&encoded, 0)).unwrap();

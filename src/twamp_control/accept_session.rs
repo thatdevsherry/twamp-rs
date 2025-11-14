@@ -1,4 +1,4 @@
-use super::accept::Accept;
+use super::Accept;
 use deku::prelude::*;
 
 /// Response for a Request-TW-Session command.

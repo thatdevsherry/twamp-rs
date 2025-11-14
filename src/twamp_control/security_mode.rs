@@ -6,7 +6,7 @@ use num_enum::IntoPrimitive;
 #[derive(Clone, Debug, Default, PartialEq, Copy, IntoPrimitive, DekuRead, DekuWrite)]
 #[repr(u32)]
 #[deku(type = "u32", endian = "endian", ctx = "endian: deku::ctx::Endian")]
-pub enum Mode {
+pub enum SecurityMode {
     /// Unused.
     /// Control-Client **should** close the connection.
     /// Server **may** close the connection immediately.
@@ -33,10 +33,10 @@ mod tests {
 
     #[test]
     fn should_have_valid_discriminants() {
-        let reserved: u32 = Mode::Reserved.into();
-        let unauthenticated: u32 = Mode::Unauthenticated.into();
-        let authenticated: u32 = Mode::Authenticated.into();
-        let encrypted: u32 = Mode::Encrypted.into();
+        let reserved: u32 = SecurityMode::Reserved.into();
+        let unauthenticated: u32 = SecurityMode::Unauthenticated.into();
+        let authenticated: u32 = SecurityMode::Authenticated.into();
+        let encrypted: u32 = SecurityMode::Encrypted.into();
         assert_eq!(reserved, 0u32);
         assert_eq!(unauthenticated, 1u32);
         assert_eq!(authenticated, 2u32);

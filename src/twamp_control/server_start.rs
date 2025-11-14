@@ -1,4 +1,4 @@
-use super::accept::Accept;
+use super::Accept;
 use crate::timestamp::timestamp::TimeStamp;
 use deku::prelude::*;
 use rand::random;

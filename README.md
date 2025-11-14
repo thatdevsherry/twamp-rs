@@ -49,7 +49,7 @@ This crate provides an implementation of TWAMP [RFC 5357](https://datatracker.ie
 > cargo test --doc
 
 # Open docs in browser
-> cargo doc --workspace --no-deps --open
+> cargo doc --no-deps --all-features --open
 ```
 
 ## Example run

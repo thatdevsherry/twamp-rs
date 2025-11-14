@@ -8,8 +8,8 @@ use clap::Parser;
 use tracing::*;
 
 use controller::Controller;
-use twamp_rs::twamp_control::constants::TWAMP_CONTROL_WELL_KNOWN_PORT;
-use twamp_rs::twamp_test::constants::TWAMP_TEST_WELL_KNOWN_PORT;
+use twamp_rs::twamp_control::TWAMP_CONTROL_WELL_KNOWN_PORT;
+use twamp_rs::twamp_test::TWAMP_TEST_WELL_KNOWN_PORT;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]

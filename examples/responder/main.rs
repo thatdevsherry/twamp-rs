@@ -10,7 +10,7 @@ use std::{
 use tokio::net::{TcpListener, TcpStream};
 use tokio::task;
 use tracing::*;
-use twamp_rs::twamp_control::constants::TWAMP_CONTROL_WELL_KNOWN_PORT;
+use twamp_rs::twamp_control::TWAMP_CONTROL_WELL_KNOWN_PORT;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]

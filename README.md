@@ -1,5 +1,10 @@
 # twamp-rs
 
+<div align="center">
+
+[![Crate Badge]][Crate] [![Repo Badge]][Repo] [![Docs Badge]][Docs] [![License Badge]][License]
+</div>
+
 TWAMP [RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357) implementation
 in rust.
 
@@ -71,3 +76,14 @@ sudo sysctl -w net.core.rmem_default=16777216
 2025-01-31T07:29:30.866153Z  INFO controller::controller: OWD (Reflector -> Sender) (AVG): 0.40ms
 2025-01-31T07:29:30.866345Z  INFO controller::controller: Jitter: 0.00ms
 ```
+
+[Repo]: https://github.com/thatdevsherry/twamp-rs
+[Docs]: https://docs.rs/twamp-rs
+[Changelog]: https://github.com/thatdevsherry/twamp-rs/blob/main/CHANGELOG.md
+[Conventional Commits]: https://www.conventionalcommits.org
+[Crate]: https://crates.io/crates/twamp-rs
+[Crate Badge]: https://img.shields.io/crates/v/twamp-rs?logo=rust&style=flat-square&color=fdbb39
+[Repo Badge]: https://img.shields.io/badge/repo-thatdevsherry/twamp-rs?style=flat-square&logo=github&color=blue
+[Docs Badge]: https://img.shields.io/badge/docs-twamp-rs?style=flat-square&logo=rust&color=red
+[License]: ./LICENSE.txt
+[License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square&color=1370D3

@@ -4,7 +4,7 @@ use super::SecurityMode;
 use deku::prelude::*;
 use rand::random;
 
-/// Server Greeting sent by `Server` to `Control-Client` after `Control-Client` opens up a TCP
+/// Server Greeting sent by [`Server`](crate::server::Server) to [`Control-Client`](crate::control_client) after [`Control-Client`](crate::control_client) opens up a TCP
 /// connection.
 ///
 /// See details in [RFC 4656](https://datatracker.ietf.org/doc/html/rfc4656#section-3.1).

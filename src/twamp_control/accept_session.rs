@@ -1,7 +1,7 @@
 use super::Accept;
 use deku::prelude::*;
 
-/// Response for a Request-TW-Session command.
+/// Response for a [Request-TW-Session](super::RequestTwSession) command.
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]
 pub struct AcceptSession {

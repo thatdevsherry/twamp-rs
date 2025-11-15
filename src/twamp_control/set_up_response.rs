@@ -3,13 +3,13 @@ use anyhow::Result;
 use deku::prelude::*;
 
 /// Sent by Control-Client to Server through TWAMP-Control after receiving
-/// [Server Greeting](crate::server_greeting::ServerGreeting).
+/// [Server Greeting](crate::twamp_control::ServerGreeting).
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]
 pub struct SetUpResponse {
     /// The [security mode](crate::security_mode::Mode) that `Control-Client` wishes to use.
     /// It **should** be a mode that the Server supports, which it had sent in
-    /// [Server Greeting](crate::server_greeting::ServerGreeting).
+    /// [Server Greeting](crate::twamp_control::ServerGreeting).
     mode: SecurityMode,
 
     /// UTF-8 string up to 80 bytes, padded with zeros if shorter. Tells `Server` which shared
@@ -19,14 +19,14 @@ pub struct SetUpResponse {
     /// acts as MBZ (Must Be Zero).
     key_id: [u8; 80],
 
-    /// Concatenation of [challenge](crate::server_greeting::ServerGreeting::challenge), AES
+    /// Concatenation of [challenge](crate::twamp_control::ServerGreeting::challenge), AES
     /// Session-Key and HMAC-SHA1 Session-Key.
     ///
-    /// Unused in [unauthenticated mode](crate::security_mode::Mode::Unauthenticated) and
+    /// Unused in [unauthenticated mode](crate::twamp_control::SecurityMode::Unauthenticated) and
     /// acts as MBZ (Must Be Zero).
     token: [u8; 64],
 
-    /// Unused in [unauthenticated mode](crate::security_mode::Mode::Unauthenticated) and
+    /// Unused in [unauthenticated mode](crate::twamp_control::SecurityMode::Unauthenticated) and
     /// acts as MBZ (Must Be Zero).
     client_iv: [u8; 16],
 }

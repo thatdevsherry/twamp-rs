@@ -4,7 +4,7 @@ use deku::prelude::*;
 use rand::random;
 use std::time::Duration;
 
-/// Sent by Server to Control-Client after receiving a [Set-Up-Response](crate::set_up_response::SetUpResponse) command.
+/// Sent by Server to Control-Client after receiving a [Set-Up-Response](crate::twamp_control::SetUpResponse) command.
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]
 pub struct ServerStart {
@@ -16,7 +16,7 @@ pub struct ServerStart {
     accept: Accept,
 
     /// Generated randomly. Unused in
-    /// [unauthenticated mode](crate::security_mode::Mode::Unauthenticated).
+    /// [unauthenticated mode](crate::twamp_control::SecurityMode::Unauthenticated).
     server_iv: [u8; 16],
 
     /// The time when the Server binary was executed.

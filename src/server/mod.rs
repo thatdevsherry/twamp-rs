@@ -16,7 +16,7 @@ use tokio::net::TcpStream;
 use tokio::sync::oneshot;
 use tracing::*;
 
-/// Server is responsible for handling incoming [TWAMP-Control](twamp_control) connection from a
+/// Server is responsible for handling incoming [TWAMP-Control](crate::twamp_control) connection from a
 /// Control-Client.
 #[derive(Debug)]
 pub struct Server {

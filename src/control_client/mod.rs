@@ -17,13 +17,18 @@ use tokio::net::TcpStream;
 use tokio::sync::oneshot;
 use tracing::*;
 
-/// Control-Client is responsible for initiating and handling TWAMP-Control with a Server.
+/// Control-Client is responsible for initiating and handling TWAMP-Control with a
+/// [Server](crate::server::Server).
 ///
-/// Responsibilites of Control-Client on TWAMP-Control are:
+/// Responsibilites of Control-Client on TWAMP-Control, in sequence, are:
 /// -   [Read Server Greeting](Self::read_server_greeting)
 /// -   [Send Set-Up-Response](Self::send_set_up_response)
 /// -   [Read Server-Start](Self::read_server_start)
 /// -   [Send Request-TW-Session](Self::send_request_tw_session)
+/// -   [Read Accept-Session](Self::read_accept_session)
+/// -   [Send Start-Sessions](Self::send_start_sessions)
+/// -   [Read Start-Ack](Self::read_start_ack)
+/// -   [Send Stop-Sessions](Self::send_stop_sessions)
 #[derive(Debug)]
 pub struct ControlClient {
     /// TCP stream on which TWAMP-Control is being used.
@@ -34,7 +39,7 @@ impl ControlClient {
     pub fn new() -> Self {
         Self { stream: None }
     }
-    /// Initiates TCP connection and starts the [TWAMP-Control](twamp_control) protocol with
+    /// Initiates TCP connection and starts the [TWAMP-Control](crate::twamp_control) protocol with
     /// Server, handling communication until the test ends or connection is killed/stopped.
     pub async fn do_twamp_control(
         &mut self,
@@ -75,13 +80,12 @@ impl ControlClient {
         Ok(())
     }
 
-    /// Reads from TWAMP-Control stream assuming the bytes to be received will be of a
-    /// `ServerGreeting`. Converts those bytes into a `ServerGreeting` struct and returns it.
+    /// Reads [`ServerGreeting`] from TWAMP-Control stream.
     pub async fn read_server_greeting(&mut self) -> Result<ServerGreeting> {
         let mut buf = [0; size_of::<ServerGreeting>()];
         info!("Reading ServerGreeting");
         self.stream.as_mut().unwrap().read_exact(&mut buf).await?;
-        let (_rest, server_greeting) = ServerGreeting::from_bytes((&buf, 0)).unwrap();
+        let (_rest, server_greeting) = ServerGreeting::from_bytes((&buf, 0)).expect("should have received valid ServerGreeting");
         debug!("Server greeting: {:?}", server_greeting);
         info!("Done reading ServerGreeting");
         Ok(server_greeting)

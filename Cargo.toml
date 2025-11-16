@@ -1,10 +1,10 @@
 [package]
 name = "twamp-rs"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Shehriyar Qureshi <thatdevsherry@gmail.com>"]
 edition = "2024"
 description = "Implementation of TWAMP (RFC 5357)"
-license-file = "LICENSE.txt"
+license = "BSD-3-Clause"
 readme = "README.md"
 repository = "https://github.com/thatdevsherry/twamp-rs"
 categories = ["network-programming"]

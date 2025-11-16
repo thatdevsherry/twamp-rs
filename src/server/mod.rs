@@ -20,41 +20,11 @@ use tracing::*;
 #[derive(Debug)]
 pub struct Server {
     socket: TcpStream,
-    server_greeting: Option<ServerGreeting>,
-    set_up_response: Option<SetUpResponse>,
-    server_start: Option<ServerStart>,
-    request_tw_session: Option<RequestTwSession>,
-    accept_session: Option<AcceptSession>,
-    start_sessions: Option<StartSessions>,
-    start_ack: Option<StartAck>,
 }
 
 impl Server {
-    fn up_next(&self) -> Messages {
-        if self.set_up_response.is_none() {
-            Messages::SetUpResponse
-        } else if self.request_tw_session.is_none() {
-            Messages::RequestTwSession
-        } else if self.start_sessions.is_none() {
-            Messages::StartSessions
-        } else if self.start_ack.is_some() {
-            Messages::StopSessions
-        } else {
-            panic!("Next message to expect should be defined");
-        }
-    }
-
     pub fn new(socket: TcpStream) -> Self {
-        Server {
-            socket,
-            server_greeting: None,
-            set_up_response: None,
-            server_start: None,
-            request_tw_session: None,
-            accept_session: None,
-            start_sessions: None,
-            start_ack: None,
-        }
+        Server { socket }
     }
 
     pub async fn handle_control_client(
@@ -65,63 +35,23 @@ impl Server {
         stop_session_tx: oneshot::Sender<()>,
         timeout_tx: oneshot::Sender<u64>,
     ) -> Result<()> {
-        self.server_greeting = Some(self.send_server_greeting().await?);
+        self.send_server_greeting().await?;
 
-        // Wrap `oneshot::Sender` in an Option to make rust happy by knowing we won't access
-        // Sender after one use, which is moved in next iteration of loop.
-        let mut ref_req_port_tx_opt = Some(req_tw_tx);
-        let mut ref_port_rx_opt = Some(ref_port_rx);
-        let mut start_ack_tx_opt = Some(start_ack_tx);
-        let mut stop_session_tx_opt = Some(stop_session_tx);
-        let mut timeout_tx_opt = Some(timeout_tx);
-        loop {
-            let mut buf = [0u8; 512];
-            let bytes_read = self.socket.read(&mut buf).await?;
-            debug!("bytes read: {}", bytes_read);
+        self.read_set_up_response().await?;
+        self.send_server_start().await?;
 
-            if bytes_read == 0 {
-                debug!("Control-Client closed connection");
-                break;
-            }
-            match self.up_next() {
-                Messages::SetUpResponse => {
-                    self.set_up_response = Some(self.read_set_up_response(&buf).await?);
-                    self.server_start = Some(self.send_server_start().await?);
-                }
-                Messages::RequestTwSession => {
-                    self.request_tw_session = Some(self.read_request_tw_session(&buf).await?);
-                    if let Some(sender) = ref_req_port_tx_opt.take() {
-                        sender
-                            .send(self.request_tw_session.to_owned().unwrap())
-                            .unwrap();
-                    };
-                    if let Some(final_port) = ref_port_rx_opt.take() {
-                        let final_port = final_port.await.unwrap();
-                        self.accept_session = Some(self.send_accept_session(final_port).await?);
-                    }
-                    if let Some(timeout) = timeout_tx_opt.take() {
-                        timeout
-                            .send(self.request_tw_session.to_owned().unwrap().timeout)
-                            .unwrap();
-                    }
-                }
-                Messages::StartSessions => {
-                    self.start_sessions = Some(self.read_start_sessions(&buf).await?);
-                    self.start_ack = Some(self.send_start_ack().await?);
-                    if let Some(start_ack_tx_val) = start_ack_tx_opt.take() {
-                        start_ack_tx_val.send(()).unwrap();
-                    }
-                }
-                Messages::StopSessions => {
-                    info!("Reading Stop-Sessions");
-                    self.read_stop_sessions(&buf).await.unwrap();
-                    if let Some(stop_session_tx_val) = stop_session_tx_opt.take() {
-                        stop_session_tx_val.send(()).unwrap();
-                    }
-                    break;
-                }
-            }
-        }
+        let request_tw_session = self.read_request_tw_session().await?;
+        req_tw_tx.send(request_tw_session.clone()).unwrap();
+        let final_port = ref_port_rx.await.unwrap();
+        self.send_accept_session(final_port).await?;
+        timeout_tx.send(request_tw_session.timeout).unwrap();
+
+        self.read_start_sessions().await?;
+        self.send_start_ack().await?;
+        start_ack_tx.send(()).unwrap();
+
+        self.read_stop_sessions().await?;
+        stop_session_tx.send(()).unwrap();
 
         Ok(())
     }
@@ -139,9 +69,11 @@ impl Server {
 
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
     /// `Set-Up-Response`. Converts those bytes into a `Set-Up-Response` struct and returns it.
-    pub async fn read_set_up_response(&mut self, buf: &[u8]) -> Result<SetUpResponse> {
+    pub async fn read_set_up_response(&mut self) -> Result<SetUpResponse> {
+        let mut buf = [0; SetUpResponse::SERIALIZED_SIZE];
         info!("Reading Set-Up-Response");
-        let (_rest, set_up_response) = SetUpResponse::from_bytes((buf, 0)).unwrap();
+        self.socket.read_exact(&mut buf).await?;
+        let (_rest, set_up_response) = SetUpResponse::from_bytes((&buf, 0)).unwrap();
         debug!("Set-Up-Response: {:?}", set_up_response);
         info!("Read Set-Up-Response");
         Ok(set_up_response)
@@ -160,9 +92,11 @@ impl Server {
 
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
     /// `Request-TW-Session`. Converts those bytes into a `Request-TW-Session` struct and returns it.
-    pub async fn read_request_tw_session(&mut self, buf: &[u8]) -> Result<RequestTwSession> {
+    pub async fn read_request_tw_session(&mut self) -> Result<RequestTwSession> {
+        let mut buf = [0; RequestTwSession::SERIALIZED_SIZE];
         debug!("Reading Request-TW-Session");
-        let (_rest, request_tw_session) = RequestTwSession::from_bytes((buf, 0)).unwrap();
+        self.socket.read_exact(&mut buf).await?;
+        let (_rest, request_tw_session) = RequestTwSession::from_bytes((&buf, 0)).unwrap();
         debug!("Request-TW-Session: {:?}", request_tw_session);
         info!("Read Request-TW-Session");
         Ok(request_tw_session)
@@ -181,9 +115,11 @@ impl Server {
 
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
     /// `Start-Sessions`. Converts those bytes into a `Start-Sessions` struct and returns it.
-    pub async fn read_start_sessions(&mut self, buf: &[u8]) -> Result<StartSessions> {
+    pub async fn read_start_sessions(&mut self) -> Result<StartSessions> {
+        let mut buf = [0; StartSessions::SERIALIZED_SIZE];
         debug!("Reading Start-Sessions");
-        let (_rest, start_sessions) = StartSessions::from_bytes((buf, 0)).unwrap();
+        self.socket.read_exact(&mut buf).await?;
+        let (_rest, start_sessions) = StartSessions::from_bytes((&buf, 0)).unwrap();
         debug!("Start-Sessions: {:?}", start_sessions);
         info!("Read Start-Sessions");
         Ok(start_sessions)
@@ -202,9 +138,11 @@ impl Server {
 
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
     /// `Stop-Sessions`. Converts those bytes into a `Stop-Sessions` struct and returns it.
-    pub async fn read_stop_sessions(&mut self, buf: &[u8]) -> Result<StopSessions> {
+    pub async fn read_stop_sessions(&mut self) -> Result<StopSessions> {
+        let mut buf = [0; StopSessions::SERIALIZED_SIZE];
         debug!("Reading Stop-Sessions");
-        let (_rest, stop_sessions) = StopSessions::from_bytes((buf, 0)).unwrap();
+        self.socket.read_exact(&mut buf).await?;
+        let (_rest, stop_sessions) = StopSessions::from_bytes((&buf, 0)).unwrap();
         debug!("Stop-Sessions: {:?}", stop_sessions);
         info!("Read Stop-Sessions");
         Ok(stop_sessions)

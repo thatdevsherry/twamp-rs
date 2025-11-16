@@ -95,6 +95,8 @@ pub struct RequestTwSession {
 }
 
 impl RequestTwSession {
+    pub const SERIALIZED_SIZE: usize = 112;
+
     pub fn new(
         sender_address: Ipv4Addr,
         sender_port: u16,
@@ -133,8 +135,6 @@ impl RequestTwSession {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    const REQUEST_TW_SESSION_LENGTH_IN_BYTES: usize = 112;
 
     #[test]
     fn command_number_is_correct() {
@@ -404,7 +404,7 @@ mod tests {
             900,
         );
         let encoded = request_tw_session.to_bytes().unwrap();
-        assert_eq!(encoded.len(), REQUEST_TW_SESSION_LENGTH_IN_BYTES)
+        assert_eq!(encoded.len(), RequestTwSession::SERIALIZED_SIZE)
     }
 
     #[test]

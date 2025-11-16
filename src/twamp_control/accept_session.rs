@@ -38,6 +38,8 @@ pub struct AcceptSession {
 }
 
 impl AcceptSession {
+    pub const SERIALIZED_SIZE: usize = 48;
+
     /// Construct from an Accept value and port. It sets sid and hmac as zeros.
     pub fn new(accept: Accept, port: u16, reflected_octets: u16, server_octets: u16) -> Self {
         AcceptSession {
@@ -56,7 +58,6 @@ impl AcceptSession {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const ACCEPT_SESSION_LENGTH_IN_BYTES: usize = 48;
 
     #[test]
     fn construct_with_accept_ok() {
@@ -143,7 +144,7 @@ mod tests {
     fn should_serialize_into_correct_length_of_bytes() {
         let accept_session = AcceptSession::new(Accept::Ok, 0, 0, 0);
         let encoded = accept_session.to_bytes().unwrap();
-        assert_eq!(encoded.len(), ACCEPT_SESSION_LENGTH_IN_BYTES);
+        assert_eq!(encoded.len(), AcceptSession::SERIALIZED_SIZE);
     }
 
     #[test]

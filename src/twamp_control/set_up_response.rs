@@ -32,6 +32,8 @@ pub struct SetUpResponse {
 }
 
 impl SetUpResponse {
+    pub const SERIALIZED_SIZE: usize = 164;
+
     /// Attempt to create Set-Up-Response with provided mode.
     ///
     /// Errors if the provided mode is not supported by `twamp-rs`.
@@ -56,7 +58,6 @@ impl SetUpResponse {
 mod tests {
     use super::*;
 
-    const SET_UP_RESPONSE_LENGTH_IN_BYTES: usize = 164;
 
     #[test]
     fn unused_key_id_in_unauth_mode() {
@@ -134,7 +135,7 @@ mod tests {
         let set_up_response = SetUpResponse::new(SecurityMode::Unauthenticated)
             .expect("should have created set_up_response.");
         let encoded = set_up_response.to_bytes().unwrap();
-        assert_eq!(encoded.len(), SET_UP_RESPONSE_LENGTH_IN_BYTES)
+        assert_eq!(encoded.len(), SetUpResponse::SERIALIZED_SIZE)
     }
 
     #[test]

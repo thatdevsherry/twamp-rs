@@ -28,6 +28,8 @@ pub struct ServerStart {
 }
 
 impl ServerStart {
+    pub const SERIALIZED_SIZE: usize = 48;
+
     /// Create instance with provided accept value.
     pub fn new(accept: Accept, start_time: Duration) -> Self {
         ServerStart {
@@ -61,7 +63,6 @@ mod tests {
     use super::*;
     use std::collections::HashSet;
 
-    const SERVER_START_LENGTH_IN_BYTES: usize = 48;
     const TIME: Duration = Duration::new(1713023152, 123456789);
 
     #[test]
@@ -135,7 +136,7 @@ mod tests {
     fn should_serialize_to_correct_bytes() {
         let server_start = ServerStart::new(Accept::Ok, TIME);
         let encoded = server_start.to_bytes().unwrap();
-        assert_eq!(encoded.len(), SERVER_START_LENGTH_IN_BYTES);
+        assert_eq!(encoded.len(), ServerStart::SERIALIZED_SIZE);
     }
 
     #[test]

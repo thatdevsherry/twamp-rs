@@ -16,6 +16,8 @@ pub struct StartSessions {
 }
 
 impl StartSessions {
+    pub const SERIALIZED_SIZE: usize = 32;
+
     pub fn new() -> Self {
         StartSessions {
             command_number: CommandNumber::StartSessions,
@@ -36,7 +38,6 @@ mod tests {
     use super::*;
     use deku::{DekuContainerRead, DekuContainerWrite};
 
-    const START_SESSIONS_LENGTH_IN_BYTES: usize = 32;
 
     #[test]
     fn command_number_is_correct() {
@@ -59,7 +60,7 @@ mod tests {
     #[test]
     fn serialize_to_bytes() {
         let start_sessions = StartSessions::new().to_bytes().unwrap();
-        assert_eq!(start_sessions.len(), START_SESSIONS_LENGTH_IN_BYTES);
+        assert_eq!(start_sessions.len(), StartSessions::SERIALIZED_SIZE);
     }
 
     #[test]

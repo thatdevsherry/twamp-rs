@@ -10,7 +10,6 @@ use crate::twamp_control::StartSessions;
 use crate::twamp_control::StopSessions;
 use anyhow::{Result, anyhow};
 use deku::prelude::*;
-use std::mem::size_of;
 use std::net::IpAddr;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
@@ -82,10 +81,11 @@ impl ControlClient {
 
     /// Reads [`ServerGreeting`] from TWAMP-Control stream.
     pub async fn read_server_greeting(&mut self) -> Result<ServerGreeting> {
-        let mut buf = [0; size_of::<ServerGreeting>()];
+        let mut buf = [0; ServerGreeting::SERIALIZED_SIZE];
         info!("Reading ServerGreeting");
         self.stream.as_mut().unwrap().read_exact(&mut buf).await?;
-        let (_rest, server_greeting) = ServerGreeting::from_bytes((&buf, 0)).expect("should have received valid ServerGreeting");
+        let (_rest, server_greeting) = ServerGreeting::from_bytes((&buf, 0))
+            .expect("should have received valid ServerGreeting");
         debug!("Server greeting: {:?}", server_greeting);
         info!("Done reading ServerGreeting");
         Ok(server_greeting)
@@ -109,7 +109,7 @@ impl ControlClient {
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
     /// `ServerStart`. Converts those bytes into a `ServerStart` struct and returns it.
     pub async fn read_server_start(&mut self) -> Result<ServerStart> {
-        let mut buf = [0; size_of::<ServerStart>()];
+        let mut buf = [0; ServerStart::SERIALIZED_SIZE];
         info!("Reading Server-Start");
         self.stream.as_mut().unwrap().read_exact(&mut buf).await?;
         let (_rest, server_start) = ServerStart::from_bytes((&buf, 0)).unwrap();
@@ -161,7 +161,7 @@ impl ControlClient {
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
     /// `AcceptSession`. Converts those bytes into a `AcceptSession` struct and returns it.
     pub async fn read_accept_session(&mut self) -> Result<AcceptSession> {
-        let mut buf = [0; size_of::<AcceptSession>()];
+        let mut buf = [0; AcceptSession::SERIALIZED_SIZE];
         info!("Reading Accept-Session");
         self.stream.as_mut().unwrap().read_exact(&mut buf).await?;
         let (_rest, accept_session) = AcceptSession::from_bytes((&buf, 0)).unwrap();
@@ -189,7 +189,7 @@ impl ControlClient {
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
     /// `Start-Ack`. Converts those bytes into a `Start-Ack` struct and returns it.
     pub async fn read_start_ack(&mut self) -> Result<StartAck> {
-        let mut buf = [0; size_of::<StartAck>()];
+        let mut buf = [0; StartAck::SERIALIZED_SIZE];
         info!("Reading Start-Ack");
         self.stream.as_mut().unwrap().read_exact(&mut buf).await?;
         let (_rest, start_ack) = StartAck::from_bytes((&buf, 0)).unwrap();

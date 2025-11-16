@@ -15,6 +15,8 @@ pub struct StartAck {
 }
 
 impl StartAck {
+    pub const SERIALIZED_SIZE: usize = 32;
+
     pub fn new(accept: Accept) -> Self {
         StartAck {
             accept,
@@ -27,7 +29,6 @@ impl StartAck {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const START_ACK_LENGTH_IN_BYTES: usize = 32;
 
     #[test]
     fn construct_with_accept_ok() {
@@ -86,7 +87,7 @@ mod tests {
     #[test]
     fn serialize_to_bytes() {
         let start_ack = StartAck::new(Accept::Ok).to_bytes().unwrap();
-        assert_eq!(start_ack.len(), START_ACK_LENGTH_IN_BYTES);
+        assert_eq!(start_ack.len(), StartAck::SERIALIZED_SIZE);
     }
 
     #[test]

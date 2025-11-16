@@ -44,6 +44,8 @@ impl fmt::Display for ServerGreeting {
 }
 
 impl ServerGreeting {
+    pub const SERIALIZED_SIZE: usize = 64;
+
     /// Create greeting with `Modes` field set to bitwise OR of provided modes.
     ///
     /// # Example
@@ -286,7 +288,7 @@ mod tests {
     fn serialize_into_correct_length_of_bytes() {
         let server_greeting = ServerGreeting::new(&[SecurityMode::Unauthenticated]);
         let encoded = server_greeting.to_bytes().unwrap();
-        assert_eq!(encoded.len(), SERVER_GREETING_LENGTH_IN_BYTES);
+        assert_eq!(encoded.len(), ServerGreeting::SERIALIZED_SIZE);
     }
 
     #[test]

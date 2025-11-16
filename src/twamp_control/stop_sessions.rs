@@ -17,6 +17,8 @@ pub struct StopSessions {
 }
 
 impl StopSessions {
+    pub const SERIALIZED_SIZE: usize = 20;
+
     pub fn new(accept: Accept) -> Self {
         StopSessions {
             command_number: CommandNumber::StopSessions,
@@ -30,7 +32,6 @@ impl StopSessions {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const STOP_SESSIONS_LENGTH_IN_BYTES: usize = 20;
 
     #[test]
     fn command_number_is_correct() {
@@ -47,7 +48,7 @@ mod tests {
     #[test]
     fn serialize_to_bytes() {
         let stop_sessions = StopSessions::new(Accept::Ok).to_bytes().unwrap();
-        assert_eq!(stop_sessions.len(), STOP_SESSIONS_LENGTH_IN_BYTES);
+        assert_eq!(stop_sessions.len(), StopSessions::SERIALIZED_SIZE);
     }
 
     #[test]

@@ -65,21 +65,9 @@ impl ServerGreeting {
     pub fn new(modes: &[SecurityMode]) -> Self {
         ServerGreeting {
             unused: [0; 12],
-            mode: modes.iter().fold(0u32, |acc, mode| {
-                acc | <SecurityMode as Into<u32>>::into(*mode)
-            }),
-            challenge: Vec::from([0; 16])
-                .iter()
-                .map(|_| random())
-                .collect::<Vec<u8>>()
-                .try_into()
-                .unwrap(),
-            salt: Vec::from([0; 16])
-                .iter()
-                .map(|_| random())
-                .collect::<Vec<u8>>()
-                .try_into()
-                .unwrap(),
+            mode: modes.iter().map(|&m| u32::from(m)).sum(),
+            challenge: [0; 16], // Fine as we only support unauth mode.
+            salt: [0; 16],      // Fine as we only support unauth mode.
             count: 1024,
             mbz: [0; 12],
         }

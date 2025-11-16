@@ -5,7 +5,7 @@ use num_enum::IntoPrimitive;
 /// [RFC 4656](https://datatracker.ietf.org/doc/html/rfc4656#section-3.1).
 #[derive(Clone, Debug, Default, PartialEq, Copy, IntoPrimitive, DekuRead, DekuWrite)]
 #[repr(u32)]
-#[deku(type = "u32", endian = "endian", ctx = "endian: deku::ctx::Endian")]
+#[deku(id_type = "u32", endian = "endian", ctx = "endian: deku::ctx::Endian")]
 pub enum SecurityMode {
     /// Unused.
     /// Control-Client **should** close the connection.

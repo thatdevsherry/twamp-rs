@@ -4,7 +4,7 @@ use num_enum::IntoPrimitive;
 /// Used to communicate Server responses to Control-Client throughout TWAMP-Control protocol.
 #[derive(Clone, Debug, Default, PartialEq, Copy, IntoPrimitive, DekuRead, DekuWrite)]
 #[repr(u8)]
-#[deku(type = "u8", endian = "endian", ctx = "endian: deku::ctx::Endian")]
+#[deku(id_type = "u8", endian = "endian", ctx = "endian: deku::ctx::Endian")]
 pub enum Accept {
     /// Ok.
     #[default]

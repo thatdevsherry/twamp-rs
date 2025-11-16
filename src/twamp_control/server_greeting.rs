@@ -2,10 +2,11 @@ use std::fmt;
 
 use super::SecurityMode;
 use deku::prelude::*;
-use rand::random;
 
 /// Server Greeting sent by [`Server`](crate::server::Server) to [`Control-Client`](crate::control_client) after [`Control-Client`](crate::control_client) opens up a TCP
 /// connection.
+///
+/// This is the first message in the TWAMP communication.
 ///
 /// See details in [RFC 4656](https://datatracker.ietf.org/doc/html/rfc4656#section-3.1).
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
@@ -15,13 +16,17 @@ pub struct ServerGreeting {
     #[deku(assert_eq = "[0u8; 12]")]
     unused: [u8; 12],
 
-    /// Security mode(s) that the Server supports.
+    /// [Security mode(s)](super::SecurityMode) that the [Server](crate::server::Server) supports.
     mode: u32,
 
-    /// Random seq of bytes.
+    /// Unused in [unauthenticated mode](super::SecurityMode::Unauthenticated).
+    ///
+    /// It should be a random sequence of bytes.
     challenge: [u8; 16],
 
-    /// Random seq of bytes.
+    /// Unused in [unauthenticated mode](super::SecurityMode::Unauthenticated).
+    ///
+    /// It is one of the parameters in deriving a key from a shared secret.
     salt: [u8; 16],
 
     /// TWAMP sets default MAX value SHOULD be 32768. It can be increased if computing
@@ -126,8 +131,6 @@ impl ServerGreeting {
 mod tests {
     use super::*;
     use std::collections::HashSet;
-
-    const SERVER_GREETING_LENGTH_IN_BYTES: usize = 64;
 
     #[test]
     fn create_server_greeting_with_mode_reserved() {
@@ -251,6 +254,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // we only support unauth mode as of now, leaving challenge as zeros.
     fn challenge_bytes_are_random() {
         let server_greeting = ServerGreeting::new(&[SecurityMode::Reserved]);
         let challenge_bytes_unique = server_greeting.challenge.iter().collect::<HashSet<_>>();
@@ -258,6 +262,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // we only support unauth mode as of now, leaving salt as zeros.
     fn salt_bytes_are_random() {
         let server_greeting = ServerGreeting::new(&[SecurityMode::Reserved]);
         let challenge_bytes_unique = server_greeting.salt.iter().collect::<HashSet<_>>();

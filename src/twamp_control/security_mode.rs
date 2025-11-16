@@ -8,22 +8,24 @@ use num_enum::IntoPrimitive;
 #[deku(id_type = "u32", endian = "endian", ctx = "endian: deku::ctx::Endian")]
 pub enum SecurityMode {
     /// Unused.
-    /// Control-Client **should** close the connection.
-    /// Server **may** close the connection immediately.
+    ///
+    /// [Control-Client](crate::control_client::ControlClient) **should** close the connection.
+    ///
+    /// [Server](crate::server::Server) **may** close the connection immediately.
     Reserved = 0,
 
-    /// Unauthenticated TWAMP-Control and TWAMP-Test.
+    /// Unauthenticated [TWAMP-Control](super) and [TWAMP-Test](crate::twamp_test).
     #[default]
     Unauthenticated = 1,
 
-    /// Authenticated TWAMP-Control and TWAMP-Test.
+    /// Authenticated [TWAMP-Control](super) and [TWAMP-Test](crate::twamp_test).
     Authenticated = 2,
 
-    /// Encrypted TWAMP-Control and TWAMP-Test.
+    /// Encrypted [TWAMP-Control](super) and [TWAMP-Test](crate::twamp_test).
     Encrypted = 4,
 
     /// [Mixed security mode](https://datatracker.ietf.org/doc/html/rfc5618).
-    /// Encrypted TWAMP-Control but unauthenticated TWAMP-Test.
+    /// Encrypted [TWAMP-Control](super) but unauthenticated [TWAMP-Test](crate::twamp_test).
     EncryptedControlUnauthTest = 8,
 }
 

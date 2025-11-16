@@ -1,6 +1,5 @@
 use crate::twamp_control::Accept;
 use crate::twamp_control::AcceptSession;
-use crate::twamp_control::Messages;
 use crate::twamp_control::RequestTwSession;
 use crate::twamp_control::SecurityMode;
 use crate::twamp_control::ServerStart;
@@ -17,7 +16,7 @@ use tokio::sync::oneshot;
 use tracing::*;
 
 /// Server is responsible for handling incoming [TWAMP-Control](crate::twamp_control) connection from a
-/// Control-Client.
+/// [Control-Client](crate::control_client::ControlClient).
 #[derive(Debug)]
 pub struct Server {
     socket: TcpStream,

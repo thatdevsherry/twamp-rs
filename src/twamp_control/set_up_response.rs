@@ -1,9 +1,12 @@
+use crate::twamp_control::ServerGreeting;
+
 use super::SecurityMode;
-use anyhow::Result;
 use deku::prelude::*;
 
 /// Sent by Control-Client to Server through TWAMP-Control after receiving
 /// [Server Greeting](crate::twamp_control::ServerGreeting).
+///
+/// This is the second message in the TWAMP communication.
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]
 pub struct SetUpResponse {
@@ -15,18 +18,18 @@ pub struct SetUpResponse {
     /// UTF-8 string up to 80 bytes, padded with zeros if shorter. Tells `Server` which shared
     /// secret the client wishes to use to authenticate or encrypt.
     ///
-    /// Unused in [unauthenticated mode](crate::security_mode::Mode::Unauthenticated) and
+    /// Unused in [unauthenticated mode](super::SecurityMode::Unauthenticated) and
     /// acts as MBZ (Must Be Zero).
     key_id: [u8; 80],
 
-    /// Concatenation of [challenge](crate::twamp_control::ServerGreeting::challenge), AES
+    /// Concatenation of [challenge](super::ServerGreeting::challenge), AES
     /// Session-Key and HMAC-SHA1 Session-Key.
     ///
-    /// Unused in [unauthenticated mode](crate::twamp_control::SecurityMode::Unauthenticated) and
+    /// Unused in [unauthenticated mode](super::SecurityMode::Unauthenticated) and
     /// acts as MBZ (Must Be Zero).
     token: [u8; 64],
 
-    /// Unused in [unauthenticated mode](crate::twamp_control::SecurityMode::Unauthenticated) and
+    /// Unused in [unauthenticated mode](super::SecurityMode::Unauthenticated) and
     /// acts as MBZ (Must Be Zero).
     client_iv: [u8; 16],
 }
@@ -37,7 +40,7 @@ impl SetUpResponse {
     /// Attempt to create Set-Up-Response with provided mode.
     ///
     /// Errors if the provided mode is not supported by `twamp-rs`.
-    pub fn new(mode: SecurityMode) -> Result<Self, String> {
+    pub fn new(mode: SecurityMode) -> anyhow::Result<Self, String> {
         match mode {
             SecurityMode::Reserved | SecurityMode::Unauthenticated => Ok(SetUpResponse {
                 mode,
@@ -54,57 +57,61 @@ impl SetUpResponse {
     }
 }
 
+impl TryFrom<ServerGreeting> for SetUpResponse {
+    type Error = &'static str;
+
+    fn try_from(value: ServerGreeting) -> Result<Self, Self::Error> {
+        if !value.has_mode(SecurityMode::Unauthenticated) {
+            return Err("twamp-rs supports only unauthenticated mode.");
+        }
+        Ok(SetUpResponse::new(SecurityMode::Unauthenticated).unwrap())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-
 
     #[test]
     fn unused_key_id_in_unauth_mode() {
         let set_up_response = SetUpResponse::new(SecurityMode::Unauthenticated)
             .expect("should have created set_up_response.");
-        assert_eq!(set_up_response.key_id.iter().fold(0, |acc, v| acc + v), 0);
+        assert_eq!(set_up_response.key_id.iter().sum::<u8>(), 0);
     }
 
     #[test]
     fn unused_token_in_unauth_mode() {
         let set_up_response = SetUpResponse::new(SecurityMode::Unauthenticated)
             .expect("should have created set_up_response.");
-        assert_eq!(set_up_response.token.iter().fold(0, |acc, v| acc + v), 0);
+        assert_eq!(set_up_response.token.iter().sum::<u8>(), 0);
     }
 
     #[test]
     fn unused_client_iv_in_unauth_mode() {
         let set_up_response = SetUpResponse::new(SecurityMode::Unauthenticated)
             .expect("should have created set_up_response.");
-        assert_eq!(
-            set_up_response.client_iv.iter().fold(0, |acc, v| acc + v),
-            0
-        );
+        assert_eq!(set_up_response.client_iv.iter().sum::<u8>(), 0);
     }
 
     #[test]
     fn unused_key_id_in_reserved_mode() {
         let set_up_response = SetUpResponse::new(SecurityMode::Reserved)
             .expect("should have created set_up_response.");
-        assert_eq!(set_up_response.key_id.iter().fold(0, |acc, v| acc + v), 0);
+        assert_eq!(set_up_response.key_id.iter().sum::<u8>(), 0);
     }
 
     #[test]
     fn unused_token_in_reserved_mode() {
         let set_up_response = SetUpResponse::new(SecurityMode::Reserved)
             .expect("should have created set_up_response.");
-        assert_eq!(set_up_response.token.iter().fold(0, |acc, v| acc + v), 0);
+        assert_eq!(set_up_response.token.iter().sum::<u8>(), 0);
     }
 
     #[test]
     fn unused_client_iv_in_reserved_mode() {
         let set_up_response = SetUpResponse::new(SecurityMode::Reserved)
             .expect("should have created set_up_response.");
-        assert_eq!(
-            set_up_response.client_iv.iter().fold(0, |acc, v| acc + v),
-            0
-        );
+        assert_eq!(set_up_response.client_iv.iter().sum::<u8>(), 0);
     }
 
     /// Unsupported mode by twamp-rs.

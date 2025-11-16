@@ -4,6 +4,13 @@ use super::command_number::CommandNumber;
 use crate::timestamp::TimeStamp;
 use deku::prelude::*;
 
+/// Sent by [Control-Client](crate::control_client::ControlClient) to
+/// [Server](crate::server::Server) with details of the TWAMP session
+/// it would like to initiate.
+///
+/// It is sent **after** a valid [ServerStart](super::ServerStart)
+/// and the response to this from Server is an
+/// [Accept-Session](super::AcceptSession).
 #[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(endian = "big")]
 pub struct RequestTwSession {

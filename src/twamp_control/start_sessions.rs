@@ -38,7 +38,6 @@ mod tests {
     use super::*;
     use deku::{DekuContainerRead, DekuContainerWrite};
 
-
     #[test]
     fn command_number_is_correct() {
         let start_sessions = StartSessions::new();

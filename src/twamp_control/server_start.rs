@@ -1,5 +1,5 @@
 use super::Accept;
-use crate::timestamp::timestamp::TimeStamp;
+use crate::timestamp::TimeStamp;
 use deku::prelude::*;
 use rand::random;
 use std::time::Duration;

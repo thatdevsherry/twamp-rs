@@ -1,4 +1,4 @@
-use crate::timestamp::timestamp::TimeStamp;
+use crate::timestamp::TimeStamp;
 use crate::twamp_test::{
     twamp_test_unauth::TwampTestPacketUnauth,
     twamp_test_unauth_reflected::TwampTestPacketUnauthReflected,

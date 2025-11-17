@@ -1,11 +1,7 @@
 use std::time::Duration;
 
 use crate::timestamp::TimeStamp;
-use crate::twamp_test::{
-    twamp_test_unauth::TwampTestPacketUnauth,
-    twamp_test_unauth_reflected::TwampTestPacketUnauthReflected,
-};
-use anyhow::anyhow;
+use crate::twamp_test::{TwampTestPacketUnauth, TwampTestPacketUnauthReflected};
 use deku::prelude::*;
 use tokio::{net::UdpSocket, time::timeout};
 use tracing::*;

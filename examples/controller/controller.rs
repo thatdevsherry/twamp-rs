@@ -17,7 +17,7 @@ use tracing::*;
 use twamp_rs::control_client::ControlClient;
 use twamp_rs::session_sender::SessionSender;
 use twamp_rs::timestamp::TimeStamp;
-use twamp_rs::twamp_test::twamp_test_unauth_reflected::TwampTestPacketUnauthReflected;
+use twamp_rs::twamp_test::TwampTestPacketUnauthReflected;
 
 #[derive(Debug, Default)]
 pub struct Controller {

@@ -1,6 +1,8 @@
 mod constants;
 pub mod error_estimate;
-pub mod twamp_test_unauth;
-pub mod twamp_test_unauth_reflected;
+mod twamp_test_unauth;
+mod twamp_test_unauth_reflected;
 
-pub use constants::*;
+pub use constants::TWAMP_TEST_WELL_KNOWN_PORT;
+pub use twamp_test_unauth::TwampTestPacketUnauth;
+pub use twamp_test_unauth_reflected::TwampTestPacketUnauthReflected;

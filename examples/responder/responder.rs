@@ -64,7 +64,7 @@ impl Responder {
                 debug!(
                     "Requested port {} not available, suggesting new available port: {}/udp",
                     req_tw_session.receiver_port,
-                    reflector_addr_new.port()
+                    udp_socket_result.as_ref().unwrap().local_addr().unwrap().port()
                 );
             }
             let udp_socket = udp_socket_result.unwrap();

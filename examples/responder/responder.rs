@@ -1,6 +1,5 @@
 use std::{net::SocketAddrV4, time::Duration};
 
-use anyhow::Result;
 use tokio::{
     net::{TcpStream, UdpSocket},
     select, spawn,
@@ -9,9 +8,9 @@ use tokio::{
     try_join,
 };
 use tracing::*;
-use twamp_rs::server::Server;
 use twamp_rs::session_reflector::SessionReflector;
 use twamp_rs::twamp_control::RequestTwSession;
+use twamp_rs::{server::Server, session_reflector::SessionReflectorError};
 
 #[derive(Debug)]
 pub struct Responder {
@@ -25,7 +24,7 @@ impl Responder {
         }
     }
 
-    pub async fn handle_controller(mut self, refwait: u16) -> Result<()> {
+    pub async fn handle_controller(mut self, refwait: u16) -> anyhow::Result<()> {
         debug!("in handle controller");
         // the port that was requested by Control-Client.
         let (req_tw_tx, req_tw_rx) = oneshot::channel::<RequestTwSession>();
@@ -64,18 +63,23 @@ impl Responder {
                 debug!(
                     "Requested port {} not available, suggesting new available port: {}/udp",
                     req_tw_session.receiver_port,
-                    udp_socket_result.as_ref().unwrap().local_addr().unwrap().port()
+                    udp_socket_result
+                        .as_ref()
+                        .unwrap()
+                        .local_addr()
+                        .unwrap()
+                        .port()
                 );
             }
             let udp_socket = udp_socket_result.unwrap();
-            udp_socket.connect(session_sender_addr).await.unwrap();
             let local_addr_port = udp_socket.local_addr().unwrap().port();
             ref_port_tx.send(local_addr_port).unwrap();
 
             // Wait for signal to start reflecting.
             start_ack_rx.await.unwrap();
 
-            let session_reflector = SessionReflector::new(udp_socket, refwait).await;
+            let session_reflector =
+                SessionReflector::new(udp_socket, session_sender_addr, refwait).await?;
             let (reflect_abort_tx, reflect_abort_rx) = oneshot::channel::<()>();
             let reflect_task = spawn(async move {
                 let reflect_result = session_reflector.do_reflect();
@@ -101,6 +105,7 @@ impl Responder {
                     reflect_abort_tx.send(()).unwrap();
                 }
             }
+            Ok::<_, SessionReflectorError>(())
         });
         try_join!(task_server, task_session_reflector).unwrap();
         debug!("Server & Refector tasks ended successfully.");

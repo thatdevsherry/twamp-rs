@@ -9,6 +9,7 @@ use thiserror::Error;
 use tokio::{net::UdpSocket, time::timeout};
 use tracing::*;
 
+/// Errors that can be raised by [SessionReflector].
 #[derive(Error, Debug)]
 pub enum SessionReflectorError {
     /// Raised when "connect" call to a Session-Sender fails.

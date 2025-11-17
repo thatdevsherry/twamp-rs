@@ -57,7 +57,7 @@ impl Controller {
         let (start_session_tx, start_session_rx) = oneshot::channel::<()>();
         let (twamp_test_complete_tx, twamp_test_complete_rx) = oneshot::channel::<()>();
         let (reflector_port_tx, reflector_port_rx) = oneshot::channel::<u16>();
-        let control_client_handle = spawn(async move {
+        let task_control_client = spawn(async move {
             self.control_client
                 .do_twamp_control(
                     twamp_control,
@@ -71,10 +71,9 @@ impl Controller {
                 .await
                 .unwrap();
         });
-        let reflected_pkts_vec: Arc<Mutex<Vec<(TwampTestPacketUnauthReflected, TimeStamp)>>> =
-            Arc::new(Mutex::new(Vec::new()));
+        let reflected_pkts_vec = Arc::new(Mutex::new(Vec::new()));
         let reflected_pkts_vec_cloned = Arc::clone(&reflected_pkts_vec);
-        let session_sender_handle = spawn(async move {
+        let task_session_sender = spawn(async move {
             // Wait until we get the Accept-Session's port.
             let final_port = reflector_port_rx.await.unwrap();
             debug!("Received reflector port: {}", final_port);
@@ -94,18 +93,18 @@ impl Controller {
             ));
             let session_sender_send = Arc::clone(self.session_sender.as_ref().unwrap());
             let session_sender_recv = Arc::clone(self.session_sender.as_ref().unwrap());
-            let send_task = spawn(async move {
+            let task_session_sender_send = spawn(async move {
                 let _ = session_sender_send.send_it(number_of_test_packets).await;
                 info!("Sent all test packets");
             });
-            let recv_task = spawn(async move {
+            let task_session_sender_recv = spawn(async move {
                 let _ = session_sender_recv
                     .recv(number_of_test_packets, reflected_pkts_vec_cloned)
                     .await;
                 info!("Got back all test packets");
             });
             // wait for all test pkts to be sent.
-            send_task.await.unwrap();
+            task_session_sender_send.await.unwrap();
 
             select! {
                 // If stop-session-sleep duration finishes before all pkts are received, drop
@@ -113,12 +112,12 @@ impl Controller {
                 _ = sleep(Duration::from_secs(stop_session_sleep)) => (),
                 // Ignore stop-session-sleep duration if session-sender got all test pkts before
                 // duration.
-                _ = recv_task => ()
+                _ = task_session_sender_recv => ()
             }
             // Inform Control-Client to send Stop-Sessions
             twamp_test_complete_tx.send(()).unwrap();
         });
-        try_join!(control_client_handle, session_sender_handle).unwrap();
+        try_join!(task_control_client, task_session_sender).unwrap();
         debug!("Control-Client & Session-Sender tasks completed.");
         let acquired_vec = reflected_pkts_vec.lock().await;
         debug!("Reflected pkts len: {}", acquired_vec.len());

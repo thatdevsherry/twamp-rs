@@ -49,8 +49,8 @@ struct Args {
 
     #[arg(
         long,
-        default_value = "900",
-        help = "Timeout (seconds) used in Request-TW-Session."
+        default_value = "5",
+        help = "Timeout (seconds) used in Request-TW-Session. Session-Reflector will continue reflecting pkts after receiving stop-sessions + this timeout."
     )]
     timeout: u64,
 

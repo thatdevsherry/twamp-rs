@@ -33,7 +33,7 @@ impl Responder {
         let (start_ack_tx, start_ack_rx) = oneshot::channel::<()>();
         let (stop_sessions_tx, stop_sessions_rx) = oneshot::channel::<()>();
         let (timeout_tx, timeout_rx) = oneshot::channel::<u64>();
-        let server_handle = spawn(async move {
+        let task_server = spawn(async move {
             self.server
                 .handle_control_client(
                     req_tw_tx,
@@ -45,7 +45,7 @@ impl Responder {
                 .await
                 .unwrap();
         });
-        let session_reflector_handle = spawn(async move {
+        let task_session_reflector = spawn(async move {
             let req_tw_session = req_tw_rx.await.unwrap();
             let session_sender_addr =
                 SocketAddrV4::new(req_tw_session.sender_address, req_tw_session.sender_port);
@@ -60,15 +60,15 @@ impl Responder {
             .await;
             if udp_socket_result.is_err() {
                 let reflector_addr_new = SocketAddrV4::new(req_tw_session.receiver_address, 0);
-                debug!(
-                    "Requested port not available, suggesting new port: {}/udp",
-                    reflector_addr_new
-                );
                 udp_socket_result = UdpSocket::bind(reflector_addr_new).await;
+                debug!(
+                    "Requested port {} not available, suggesting new available port: {}/udp",
+                    req_tw_session.receiver_port,
+                    reflector_addr_new.port()
+                );
             }
             let udp_socket = udp_socket_result.unwrap();
             udp_socket.connect(session_sender_addr).await.unwrap();
-            debug!("hmm: {:?}", udp_socket.peer_addr());
             let local_addr_port = udp_socket.local_addr().unwrap().port();
             ref_port_tx.send(local_addr_port).unwrap();
 
@@ -102,7 +102,7 @@ impl Responder {
                 }
             }
         });
-        try_join!(server_handle, session_reflector_handle).unwrap();
+        try_join!(task_server, task_session_reflector).unwrap();
         debug!("Server & Refector tasks ended successfully.");
         Ok(())
     }

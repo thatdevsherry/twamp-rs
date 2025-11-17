@@ -43,7 +43,10 @@ async fn try_main() -> Result<()> {
     loop {
         let (socket, client_addr) = listener.accept().await?;
         info!("Received connection from {}/tcp", client_addr);
-        task::spawn(async move {
+
+        // might be a good idea to keep track of active responder join handles.
+        // e.g. for cancellation, metrics etc
+        let _task_responder = task::spawn(async move {
             handle_client(socket, args.refwait).await;
         });
     }

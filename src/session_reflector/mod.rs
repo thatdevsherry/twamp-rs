@@ -49,14 +49,11 @@ impl SessionReflector {
                 "Read Twamp-Test with seq: {}",
                 twamp_test_unauth.sequence_number
             );
-            // spawn task so we still read
-            spawn(async move {
-                let pkt = twamp_test_unauth;
-                let pkt_reflected = TwampTestPacketUnauthReflected::new(seq, pkt, recv_timestamp);
-                let encoded = pkt_reflected.to_bytes().unwrap();
-                let len = sock_clone.send(&encoded[..]).await.unwrap();
-                trace!("Sent reflected pkt of bytes: {}", len);
-            });
+            let pkt_reflected =
+                TwampTestPacketUnauthReflected::new(seq, twamp_test_unauth, recv_timestamp);
+            let encoded = pkt_reflected.to_bytes().unwrap();
+            let len = sock_clone.send(&encoded[..]).await.unwrap();
+            trace!("Sent reflected pkt of bytes: {}", len);
             seq += 1;
         }
     }

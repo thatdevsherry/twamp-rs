@@ -1,13 +1,13 @@
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use crate::timestamp::TimeStamp;
 use crate::twamp_test::{
     twamp_test_unauth::TwampTestPacketUnauth,
     twamp_test_unauth_reflected::TwampTestPacketUnauthReflected,
 };
-use anyhow::{Result, anyhow};
+use anyhow::anyhow;
 use deku::prelude::*;
-use tokio::{net::UdpSocket, spawn, time::timeout};
+use tokio::{net::UdpSocket, time::timeout};
 use tracing::*;
 
 #[derive(Debug)]
@@ -22,20 +22,23 @@ impl SessionReflector {
         Self { socket, refwait }
     }
 
-    /// Starts reflecting TWAMP-Test packets indefinitely.
-    pub async fn do_reflect(self) -> Result<()> {
-        let l = self.socket.local_addr().unwrap();
-        let p = self.socket.peer_addr().unwrap();
-        let sock = Arc::new(self.socket);
-        debug!("Listening for pkts from {} on {}", p, l);
+    /// Listens for TWAMP-Test packets.
+    ///
+    /// Once it receives one, it processes it and sends back TWAMP-Test reflected packet.
+    ///
+    /// It only listens for packets until REFWAIT timeout. If REFWAIT timeout is reached, it
+    /// returns with an Error.
+    pub async fn do_reflect(self) -> anyhow::Result<()> {
+        let local_addr = self.socket.local_addr().unwrap();
+        let peer_addr = self.socket.peer_addr().unwrap();
+        debug!("Listening for pkts from {} on {}", peer_addr, local_addr);
         let mut seq: u32 = 0;
         loop {
-            let sock_clone = Arc::clone(&sock);
             let mut buf = [0u8; 1472]; // 1472 for max MTU. Even though we aren't setting padding
             // above 27. Still setting this big for now.
             let bytes_read = timeout(
                 Duration::from_secs(self.refwait.into()),
-                sock_clone.recv(&mut buf),
+                self.socket.recv(&mut buf),
             )
             .await;
             if bytes_read.is_err() {
@@ -52,7 +55,7 @@ impl SessionReflector {
             let pkt_reflected =
                 TwampTestPacketUnauthReflected::new(seq, twamp_test_unauth, recv_timestamp);
             let encoded = pkt_reflected.to_bytes().unwrap();
-            let len = sock_clone.send(&encoded[..]).await.unwrap();
+            let len = self.socket.send(&encoded[..]).await.unwrap();
             trace!("Sent reflected pkt of bytes: {}", len);
             seq += 1;
         }

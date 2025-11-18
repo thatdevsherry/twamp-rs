@@ -8,7 +8,7 @@
 This crate provides an implementation of TWAMP [RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357) along with building blocks for making your own.
 
 ## Features
-- [x] TWAMP-Control 
+- [x] TWAMP-Control
 - [x] TWAMP-Test
 - [x] Control-Client
 - [x] Server
@@ -25,6 +25,7 @@ This crate provides an implementation of TWAMP [RFC 5357](https://datatracker.ie
 - [ ] TWAMP-Light
     - [ ] Controller (server + control-client + session-sender)
     - [ ] Responder (session-reflector)
+- [ ] STAMP
 
 ## Setup and run
 ```bash
@@ -40,7 +41,7 @@ This crate provides an implementation of TWAMP [RFC 5357](https://datatracker.ie
 --number-of-test-packets 100 \
 --timeout 10
 
-# Test with release 
+# Test with release
 ./run_responder
 ./run_client
 

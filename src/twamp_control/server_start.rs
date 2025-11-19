@@ -35,12 +35,7 @@ impl ServerStart {
         ServerStart {
             mbz_start: [0; 15],
             accept,
-            server_iv: Vec::from([0; 16])
-                .iter()
-                .map(|_| random())
-                .collect::<Vec<u8>>()
-                .try_into()
-                .unwrap(),
+            server_iv: [0; 16], // unused in unauth mode
             start_time: TimeStamp::try_from(start_time)
                 .expect("should have converted duration to timestamp."),
             mbz_end: [0; 8],

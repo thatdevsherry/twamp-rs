@@ -66,13 +66,13 @@ impl SetUpResponse {
 }
 
 impl TryFrom<ServerGreeting> for SetUpResponse {
-    type Error = &'static str;
+    type Error = String;
 
     fn try_from(value: ServerGreeting) -> Result<Self, Self::Error> {
         if !value.has_mode(SecurityMode::Unauthenticated) {
-            return Err("twamp-rs supports only unauthenticated mode.");
+            return Err("twamp-rs supports only unauthenticated mode.".to_string());
         }
-        Ok(SetUpResponse::new(SecurityMode::Unauthenticated).unwrap())
+        SetUpResponse::new(SecurityMode::Unauthenticated)
     }
 }
 

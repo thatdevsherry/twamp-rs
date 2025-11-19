@@ -19,20 +19,36 @@ use tokio::net::TcpStream;
 use tokio::sync::oneshot;
 use tracing::*;
 
+/// Various errors emitted from [ControlClient].
+///
+/// These are mainly wrappers but with additional context which could prove useful
+/// when something goes wrong.
 #[derive(Error, Debug)]
 pub enum ControlClientError {
+    /// Indicates failure when reading message on TWAMP-Control.
     #[error("failed to read from stream")]
     ReadError(ControlMessage, #[source] io::Error),
 
+    /// Indicates failure when sending message on TWAMP-Control.
     #[error("failed to write to stream")]
     WriteError(ControlMessage, #[source] io::Error),
 
+    /// Indicates failure when converting message from wire and rust format.
     #[error("failed to convert b/w rust and wire format.")]
     WireConversionError(#[source] DekuError),
 
+    /// Indicates Control-Client not being bound to a TcpStream.
+    ///
+    /// This shouldn't happen and denotes [ControlClient] disconnecting
+    /// spuriously. That or an OS level issue.
     #[error("Control-Client is not bound to TcpStream")]
     NotBound(#[source] io::Error),
 
+    /// Indicates Server not being connected to TcpStream.
+    ///
+    /// This shouldn't happen and denotes Server disconnecting
+    /// without [ControlClient] being informed. That or it can be an
+    /// OS level issue.
     #[error("Server was not connected to TcpStream")]
     ServerNotConnected(#[source] io::Error),
 }

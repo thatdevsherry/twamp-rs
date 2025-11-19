@@ -2,7 +2,7 @@
 pub const TWAMP_CONTROL_WELL_KNOWN_PORT: u16 = 862;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum ControlMessages {
+pub enum ControlMessage {
     ServerGreeting,
     SetUpResponse,
     ServerStart,

@@ -1,33 +1,36 @@
 # twamp-rs
 
-<div align="center">
-
 [![Crate Badge]][Crate] [![Docs Badge]][Docs] [![License Badge]][License]
-</div>
 
-This crate provides an implementation of TWAMP [RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357) along with building blocks for making your own.
+This crate provides an implementation of TWAMP
+[RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357)
+along with building blocks for making your own.
 
 ## Features
+
+This also loosely serves as roadmap (checkpoint order).
+
 - [x] TWAMP-Control
 - [x] TWAMP-Test
 - [x] Control-Client
 - [x] Server
 - [x] Session-Sender
 - [x] Session-Reflector
-- [ ] Security Modes
-    - [x] Unauthenticated
-    - [ ] Authenticated
-    - [ ] Encrypted
-- [ ] DSCP (QoS)
 - [x] TWAMP-full
-    - [x] Controller (control-client + session-sender)
-    - [x] Responder (server + session-reflector)
+  - [x] Controller (control-client + session-sender)
+  - [x] Responder (server + session-reflector)
 - [ ] TWAMP-Light
-    - [ ] Controller (server + control-client + session-sender)
-    - [ ] Responder (session-reflector)
+  - [ ] Controller (server + control-client + session-sender)
+  - [ ] Responder (session-reflector)
 - [ ] STAMP
+- [ ] Security Modes
+  - [x] Unauthenticated
+  - [ ] Authenticated
+  - [ ] Encrypted
+- [ ] DSCP (QoS)
 
 ## Setup and run
+
 ```bash
 # Run server first.
 > cargo run --example responder -- --port 4000 # defaults to 862 which needs permissions
@@ -95,13 +98,9 @@ sudo sysctl -w net.core.rmem_default=16777216
 2025-01-31T07:29:30.866345Z  INFO controller::controller: Jitter: 0.00ms
 ```
 
-[Repo]: https://github.com/thatdevsherry/twamp-rs
 [Docs]: https://docs.rs/twamp-rs
-[Changelog]: https://github.com/thatdevsherry/twamp-rs/blob/main/CHANGELOG.md
-[Conventional Commits]: https://www.conventionalcommits.org
 [Crate]: https://crates.io/crates/twamp-rs
 [Crate Badge]: https://img.shields.io/crates/v/twamp-rs?logo=rust&style=flat-square&color=fdbb39
-[Repo Badge]: https://img.shields.io/badge/repo-thatdevsherry/twamp-rs?style=flat-square&logo=github&color=blue
 [Docs Badge]: https://img.shields.io/badge/docs-twamp-rs?style=flat-square&logo=rust&color=red
 [License]: ./LICENSE.txt
 [License Badge]: https://img.shields.io/crates/l/twamp-rs?style=flat-square&color=1370D3

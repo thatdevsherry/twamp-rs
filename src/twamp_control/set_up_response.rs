@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::twamp_control::ServerGreeting;
 
 use super::SecurityMode;
@@ -32,6 +34,12 @@ pub struct SetUpResponse {
     /// Unused in [unauthenticated mode](super::SecurityMode::Unauthenticated) and
     /// acts as MBZ (Must Be Zero).
     client_iv: [u8; 16],
+}
+
+impl Display for SetUpResponse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Set-Up-Response: {{ mode: {:?} }}", self.mode)
+    }
 }
 
 impl SetUpResponse {

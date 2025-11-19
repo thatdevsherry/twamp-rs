@@ -33,10 +33,10 @@ This also loosely serves as roadmap (checkpoint order).
 
 ```bash
 # Run server first.
-> cargo run --example responder -- --port 4000 # defaults to 862 which needs permissions
+> cargo run --example twamp-responder -- --port 4000 # default 862 which needs permissions
 
 # Run client
-> cargo run --example controller -- \
+> cargo run --example twamp-controller -- \
 --responder-addr 127.0.0.1 \
 --responder-port 4000 \
 --controller-addr 127.0.0.1 \

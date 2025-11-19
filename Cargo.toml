@@ -29,9 +29,25 @@ rand = "0.9.2"
 thiserror = "2.0.17"
 
 [[example]]
-name = "controller"
-path = "examples/controller/main.rs"
+name = "twamp-controller"
+path = "examples/twamp/controller/main.rs"
 
 [[example]]
-name = "responder"
-path = "examples/responder/main.rs"
+name = "twamp-responder"
+path = "examples/twamp/responder/main.rs"
+
+[[example]]
+name = "twamp-light-controller"
+path = "examples/twamp_light/controller/main.rs"
+
+[[example]]
+name = "twamp-light-responder"
+path = "examples/twamp_light/responder/main.rs"
+
+[[example]]
+name = "stamp-session-sender"
+path = "examples/stamp/session_sender/main.rs"
+
+[[example]]
+name = "stamp-session-reflector"
+path = "examples/stamp/session_reflector/main.rs"

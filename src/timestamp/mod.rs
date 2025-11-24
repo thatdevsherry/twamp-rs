@@ -71,22 +71,21 @@ impl From<TimeStamp> for f64 {
     }
 }
 
-impl TryFrom<Duration> for TimeStamp {
-    type Error = &'static str;
+impl From<Duration> for TimeStamp {
     /// Convert from a Duration.
     ///
     /// **Note** that it assumes the duration is from [`UNIX_EPOCH`].
     ///
     /// It performs conversion from `UNIX_EPOCH` duration to [`NTP_EPOCH`] duration.
-    fn try_from(value: Duration) -> Result<Self, Self::Error> {
+    fn from(value: Duration) -> Self {
         let now_since_ntp_epoch = value + Duration::from_secs(NTP_EPOCH);
         let integer_part = now_since_ntp_epoch.as_secs() % 4_294_967_296u64;
         let fractional_part = now_since_ntp_epoch.subsec_nanos();
 
-        Ok(Self {
+        Self {
             integer_part_of_seconds: integer_part as u32,
             fractional_part_of_seconds: fractional_part,
-        })
+        }
     }
 }
 

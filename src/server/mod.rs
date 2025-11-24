@@ -48,7 +48,7 @@ impl Server {
         start_ack_tx: oneshot::Sender<()>,
         stop_session_tx: oneshot::Sender<()>,
         timeout_tx: oneshot::Sender<u64>,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), ServerError> {
         self.send_server_greeting().await?;
 
         self.read_set_up_response().await?;
@@ -81,7 +81,7 @@ impl Server {
     }
 
     /// Creates a `ServerGreeting`, converts to bytes and sends it out on `TWAMP-Control`.
-    pub async fn send_server_greeting(&mut self) -> anyhow::Result<ServerGreeting> {
+    pub async fn send_server_greeting(&mut self) -> Result<ServerGreeting, ServerError> {
         info!("Sending ServerGreeting");
         let server_greeting = ServerGreeting::new(&[SecurityMode::Unauthenticated]);
         debug!("ServerGreeting: {:?}", server_greeting);
@@ -98,7 +98,7 @@ impl Server {
 
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
     /// `Set-Up-Response`. Converts those bytes into a `Set-Up-Response` struct and returns it.
-    pub async fn read_set_up_response(&mut self) -> anyhow::Result<SetUpResponse> {
+    pub async fn read_set_up_response(&mut self) -> Result<SetUpResponse, ServerError> {
         let mut buf = [0; SetUpResponse::SERIALIZED_SIZE];
         info!("Reading Set-Up-Response");
         self.socket
@@ -113,7 +113,7 @@ impl Server {
     }
 
     /// Creates a `Server-Start`, converts to bytes and sends it out on `TWAMP-Control`.
-    pub async fn send_server_start(&mut self) -> anyhow::Result<ServerStart> {
+    pub async fn send_server_start(&mut self) -> Result<ServerStart, ServerError> {
         info!("Sending Server-Start");
         let server_start = ServerStart::new(Accept::Ok, Duration::new(123456, 789));
         debug!("Server-Start: {:?}", server_start);
@@ -130,7 +130,7 @@ impl Server {
 
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
     /// `Request-TW-Session`. Converts those bytes into a `Request-TW-Session` struct and returns it.
-    pub async fn read_request_tw_session(&mut self) -> anyhow::Result<RequestTwSession> {
+    pub async fn read_request_tw_session(&mut self) -> Result<RequestTwSession, ServerError> {
         let mut buf = [0; RequestTwSession::SERIALIZED_SIZE];
         debug!("Reading Request-TW-Session");
         self.socket
@@ -150,7 +150,7 @@ impl Server {
     pub async fn send_accept_session(
         &mut self,
         receiver_port: u16,
-    ) -> anyhow::Result<AcceptSession> {
+    ) -> Result<AcceptSession, ServerError> {
         info!("Sending Accept-Session");
         let accept_session = AcceptSession::new(Accept::Ok, receiver_port, 0, 0);
         debug!("Accept-Session: {:?}", accept_session);
@@ -167,7 +167,7 @@ impl Server {
 
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
     /// `Start-Sessions`. Converts those bytes into a `Start-Sessions` struct and returns it.
-    pub async fn read_start_sessions(&mut self) -> anyhow::Result<StartSessions> {
+    pub async fn read_start_sessions(&mut self) -> Result<StartSessions, ServerError> {
         let mut buf = [0; StartSessions::SERIALIZED_SIZE];
         debug!("Reading Start-Sessions");
         self.socket
@@ -182,7 +182,7 @@ impl Server {
     }
 
     /// Creates a `Start-Ack`, converts to bytes and sends it out on `TWAMP-Control`.
-    pub async fn send_start_ack(&mut self) -> anyhow::Result<StartAck> {
+    pub async fn send_start_ack(&mut self) -> Result<StartAck, ServerError> {
         info!("Sending Start-Ack");
         let start_ack = StartAck::new(Accept::Ok);
         debug!("Start-Ack: {:?}", start_ack);
@@ -199,7 +199,7 @@ impl Server {
 
     /// Reads from `TWAMP-Control` stream assuming the bytes to be received will be of a
     /// `Stop-Sessions`. Converts those bytes into a `Stop-Sessions` struct and returns it.
-    pub async fn read_stop_sessions(&mut self) -> anyhow::Result<StopSessions> {
+    pub async fn read_stop_sessions(&mut self) -> Result<StopSessions, ServerError> {
         let mut buf = [0; StopSessions::SERIALIZED_SIZE];
         debug!("Reading Stop-Sessions");
         self.socket
